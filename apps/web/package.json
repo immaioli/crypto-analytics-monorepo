@@ -1,0 +1,14 @@
+{
+  "name": "@dashboard-cripto/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next.js dashboard (Phase 1 placeholder until Phase 3 bootstrap)",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "node -e \"console.log('Web scaffold: Next.js bootstrap lands in Phase 3')\"",
+    "test": "node --test server.test.js",
+    "lint": "node -e \"process.exit(0)\""
+  }
+}

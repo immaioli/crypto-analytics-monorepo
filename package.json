@@ -1,0 +1,23 @@
+{
+  "name": "dashboard-cripto",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Top-10 crypto dashboard — NestJS API, Next.js web, Redis cache",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "docker compose up --build",
+    "dev:api": "npm run start:dev -w @dashboard-cripto/api",
+    "dev:web": "npm run dev -w @dashboard-cripto/web",
+    "build": "npm run build -ws --if-present",
+    "build:types": "npm run build -w @dashboard-cripto/shared-types",
+    "test": "npm run test -ws --if-present",
+    "test:infra": "node scripts/validate-infra.mjs",
+    "lint": "npm run lint -ws --if-present"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

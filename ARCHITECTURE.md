@@ -48,7 +48,7 @@ TypeScript types will be shared in a monorepo or package. All routes exposed und
 6.  **Indexed Comparison:** (Lightweight Charts) Overlapping percentage variation.
 7.  **Donut Chart:** (Recharts) Top 10 dominance distribution.
 
-## 5. Engineering Process and Workflow (TTT + Spec-kit)
+## 5. Engineering Process and Workflow (Test-First + Spec-kit)
 Development does not happen in generic sprints, but in strictly controlled cycles.
 
 ### Spec-Driven Setup (Phase 0)
@@ -57,7 +57,7 @@ Establish the core specifications:
 - `spec.md`: Requirements definition without technical constraints.
 - `plan.md`: Detailed technical decisions.
 
-### Test-to-Task (TTT) Protocol
+### Test-First Protocol
 For every task generated, the following flow is strict:
 1. **Task Selection:** Start task `X`.
 2. **Test Setup:** The test (unit or integration) is written BEFORE the code.
