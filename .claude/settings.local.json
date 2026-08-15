@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(pnpm run *)",
+      "Bash(pnpm --dir apps/api run test)",
+      "Bash(npx vitest *)",
+      "Bash(./node_modules/.bin/vitest run *)",
+      "Bash(cmd.exe /c \"cd apps\\\\api && npm run test\")",
+      "Bash(powershell.exe -Command \"cd apps/api; npm run test\")"
+    ]
+  }
+}

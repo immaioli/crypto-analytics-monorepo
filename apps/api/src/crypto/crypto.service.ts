@@ -185,13 +185,17 @@ export class CryptoService {
 
     for (let i = 0; i < sortedIds.length; i++) {
       const id = sortedIds[i];
-      const history = histories[i];
+      if (!id) continue;
 
+      const history = histories[i];
       if (!history || history.prices.length === 0) continue;
 
       const basicInfo = topCoins.find(c => c.id === id);
 
-      const basePrice = history.prices[0].price;
+      const firstPrice = history.prices[0];
+      if (!firstPrice) continue;
+
+      const basePrice = firstPrice.price;
 
       // Map prices to relative percentages compared to basePrice (index 0)
       const series = history.prices.map(point => {
