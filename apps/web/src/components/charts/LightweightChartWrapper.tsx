@@ -9,9 +9,36 @@ export type ChartDataType =
   | { time: Time; open: number; high: number; low: number; close: number }[] // Candle
   | { time: Time; value: number; color?: string }[];    // Histogram (Volume)
 
+// Price lines optional configuration
+export interface ChartPriceLine {
+  price: number;
+  color: string;
+  lineWidth: 1 | 2 | 3 | 4;
+  lineStyle: number; // 0=Solid, 1=Dotted, 2=Dashed
+  axisLabelVisible: boolean;
+  title: string;
+  axisLabelPosition?: 'right' | 'left';
+}
+
+export interface MultiLineSeriesConfig {
+  id: string;
+  data: { time: Time; value: number }[];
+  color: string;
+  title: string;
+}
+
 export interface LightweightChartWrapperProps {
-  type: 'area' | 'candlestick' | 'histogram' | 'line';
-  data: ChartDataType;
+  type: 'area' | 'candlestick' | 'histogram' | 'line' | 'multi-line';
+  data?: ChartDataType; // Optional for multi-line
+  multiLineData?: MultiLineSeriesConfig[]; // Used only for 'multi-line' type
+  priceLines?: ChartPriceLine[];
+  seriesConfig?: {
+    lastValueVisible?: boolean;
+    title?: string;
+    priceLineColor?: string;
+    priceLineWidth?: 1 | 2 | 3 | 4;
+    priceLineStyle?: number; // 0=Solid, 1=Dotted, 2=Dashed
+  };
   colors?: {
     backgroundColor?: string;
     textColor?: string;
@@ -24,7 +51,7 @@ export interface LightweightChartWrapperProps {
   height?: number;
 }
 
-export function LightweightChartWrapper({ type, data, colors, height = 400 }: LightweightChartWrapperProps) {
+export function LightweightChartWrapper({ type, data, multiLineData, priceLines, seriesConfig, colors, height = 400 }: LightweightChartWrapperProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
@@ -44,6 +71,24 @@ export function LightweightChartWrapper({ type, data, colors, height = 400 }: Li
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    const containerWidth = chartContainerRef.current.clientWidth;
+    // Precisamos de um espaço físico fixo em pixels para as legendas (aprox 80px),
+    // não importa quantos candles existam. O Lightweight Charts usa 'rightOffset' em "quantidade de barras".
+    // Então calculamos dinamicamente quantas barras equivalem a 80px no zoom atual.
+    const labelSpacePx = 80;
+
+    // For multi-line, data length is based on the first series
+    let dataLen = 0;
+    if (type === 'multi-line' && multiLineData && multiLineData.length > 0) {
+      dataLen = multiLineData[0].data.length;
+    } else if (Array.isArray(data)) {
+      dataLen = data.length;
+    }
+
+    const dynamicRightOffset = dataLen > 0
+      ? (labelSpacePx * dataLen) / Math.max(1, containerWidth - labelSpacePx)
+      : 5;
+
     // 1. Initialize Chart
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -54,11 +99,20 @@ export function LightweightChartWrapper({ type, data, colors, height = 400 }: Li
         vertLines: { color: 'rgba(51, 65, 85, 0.4)' }, // slate-700 w/ opacity
         horzLines: { color: 'rgba(51, 65, 85, 0.4)' },
       },
-      width: chartContainerRef.current.clientWidth,
+      localization: {
+        priceFormatter: (price: number) => {
+          return price.toLocaleString(undefined, {
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 6
+          });
+        }
+      },
+      width: containerWidth,
       height: height,
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
+        rightOffset: dynamicRightOffset,
       },
     });
     chartRef.current = chart;
@@ -80,6 +134,11 @@ export function LightweightChartWrapper({ type, data, colors, height = 400 }: Li
           borderVisible: false,
           wickUpColor: defaultTheme.upColor,
           wickDownColor: defaultTheme.downColor,
+          lastValueVisible: seriesConfig?.lastValueVisible ?? true,
+          title: seriesConfig?.title ?? '',
+          ...(seriesConfig?.priceLineColor ? { priceLineColor: seriesConfig.priceLineColor } : {}),
+          priceLineWidth: seriesConfig?.priceLineWidth ?? 1,
+          priceLineStyle: seriesConfig?.priceLineStyle ?? 1,
         });
         break;
       case 'histogram':
@@ -92,11 +151,46 @@ export function LightweightChartWrapper({ type, data, colors, height = 400 }: Li
           color: defaultTheme.lineColor,
         });
         break;
+      case 'multi-line':
+        // For multi-line, we don't create a single series here. We loop through multiLineData below.
+        break;
     }
-    seriesRef.current = series;
 
-    // 3. Set Data
-    series.setData(data as any);
+    if (type !== 'multi-line' && series) {
+      seriesRef.current = series;
+      // 3. Set Data
+      if (data) {
+        series.setData(data as any);
+      }
+    }
+
+    if (type === 'multi-line' && multiLineData) {
+      multiLineData.forEach(lineConfig => {
+        const lineSeries = chart.addLineSeries({
+          color: lineConfig.color,
+          lineWidth: 2,
+          title: lineConfig.title,
+        });
+        lineSeries.setData(lineConfig.data as any);
+      });
+    }
+
+    // 3.5. Add Price Lines if requested (only makes sense for single series currently)
+    if (type !== 'multi-line' && series && priceLines && priceLines.length > 0) {
+      priceLines.forEach(lineConfig => {
+        series.createPriceLine({
+          price: lineConfig.price,
+          color: lineConfig.color,
+          lineWidth: lineConfig.lineWidth,
+          lineStyle: lineConfig.lineStyle,
+          axisLabelVisible: lineConfig.axisLabelVisible,
+          title: lineConfig.title,
+          // Support for rendering title on the right (actually controlled via layout if native, or pseudo hack)
+          // But lightweight charts doesn't have a direct 'left/right' for price line titles, they are always left.
+        });
+      });
+    }
+
     chart.timeScale().fitContent();
 
     // 4. Handle Window Resize
@@ -112,7 +206,7 @@ export function LightweightChartWrapper({ type, data, colors, height = 400 }: Li
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, [type, data, height]); // Re-initialize if type, data reference, or height changes
+  }, [type, data, multiLineData, priceLines, height]); // Re-initialize if type, data reference, or height changes
 
   return (
     <div

@@ -15,5 +15,6 @@ export function useTopCoins() {
   return useQuery<CoinSummary[], Error>({
     queryKey: ['coins', 'top'],
     queryFn: () => fetcher(`${apiUrl}${API_ROUTES.top}`),
+    refetchInterval: 60000, // Refresh every 60 seconds automatically
   });
 }

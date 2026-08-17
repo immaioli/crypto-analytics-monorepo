@@ -51,14 +51,14 @@ export function Tabs({ tabs, defaultTabId }: TabsProps) {
       </div>
       <div className="mt-4">
         {tabs.map((tab) => {
-          if (activeTabId !== tab.id) return null;
+          const isActive = activeTabId === tab.id;
           return (
             <div
               key={tab.id}
               role="tabpanel"
               id={`panel-${tab.id}`}
               aria-labelledby={`tab-${tab.id}`}
-              className="w-full outline-none focus:ring-0"
+              className={`w-full outline-none focus:ring-0 ${!isActive ? 'hidden' : ''}`}
               tabIndex={0}
             >
               {tab.content}

@@ -41,7 +41,7 @@ export function MarketDominanceDonut({ coins }: MarketDominanceDonutProps) {
 
   return (
     <div className="h-[400px] w-full bg-[#0b1220] border border-slate-800 rounded-lg p-4">
-      <h3 className="text-slate-200 font-semibold mb-4 text-center">Market Dominance (Top 10)</h3>
+      <h3 className="text-slate-200 font-semibold mb-4 text-center">Market Dominance (Top 5)</h3>
       <ResponsiveContainer width="100%" height="90%">
         <PieChart>
           <Pie
