@@ -57,6 +57,7 @@ export interface ApiErrorBody {
 
 export const API_ROUTES = {
   top: "/api/v1/coins/top",
+  coin: (id: string) => `/api/v1/coins/${id}`,
   ohlc: (id: string, days: SupportedPeriod) =>
     `/api/v1/coins/${id}/ohlc?days=${days}`,
   history: (id: string, days: SupportedPeriod) =>
