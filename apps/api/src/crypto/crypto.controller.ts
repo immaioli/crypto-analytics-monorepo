@@ -21,6 +21,11 @@ export class CryptoController {
     return this.cryptoService.compareCoins(idsArray, days);
   }
 
+  @Get('/api/v1/coins/:id')
+  async getCoinSummary(@Param('id') id: string): Promise<CoinSummary> {
+    return this.cryptoService.getCoinSummary(id);
+  }
+
   @Get('/api/v1/coins/:id/ohlc')
   async getOhlc(
     @Param('id') id: string,

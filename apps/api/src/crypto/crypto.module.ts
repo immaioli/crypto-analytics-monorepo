@@ -4,6 +4,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { CryptoController } from './crypto.controller.js';
 import { CryptoService } from './crypto.service.js';
+import { CoinGeckoClientService } from './services/coingecko-client.service.js';
+import { CryptoMathService } from './services/crypto-math.service.js';
 
 @Module({
   imports: [
@@ -30,6 +32,6 @@ import { CryptoService } from './crypto.service.js';
     }),
   ],
   controllers: [CryptoController],
-  providers: [CryptoService],
+  providers: [CryptoService, CoinGeckoClientService, CryptoMathService],
 })
 export class CryptoModule {}
