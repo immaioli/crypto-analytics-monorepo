@@ -25,85 +25,112 @@ export class BinanceClientService implements ICryptoProvider {
   }
 
   async getMarkets(limit: number): Promise<any[]> {
-    const coinIds = this.dictionary.getTopCoinIds(limit);
-    const tradingPairs = coinIds.map(coinId => this.dictionary.getBinancePair(coinId)).filter(Boolean);
-    const symbolsParam = encodeURIComponent(JSON.stringify(tradingPairs));
+    // 1. Fetch ALL tickers from Binance (we don't pass a symbol filter)
+    const requestUrl = `${this.baseUrl}/ticker/24hr`;
+    this.logger.debug(`Binance fetching all markets: ${requestUrl}`);
 
-    const requestUrl = `${this.baseUrl}/ticker/24hr?symbols=${symbolsParam}`;
-    this.logger.debug(`Binance fetching markets: ${requestUrl}`);
+    const binanceResponse = await firstValueFrom(this.httpService.get(requestUrl));
+    let tickersData: any[] = binanceResponse.data;
 
-    // Fetch Binance tickers + CoinCap assets in parallel for market cap enrichment
-    const [binanceResponse, coincapResponse] = await Promise.all([
-      firstValueFrom(this.httpService.get(requestUrl)),
-      firstValueFrom(this.httpService.get(`https://api.coincap.io/v2/assets?limit=${limit}`)).catch(() => null),
-    ]);
+    // Filter only USDT pairs for consistency
+    tickersData = tickersData.filter(ticker => ticker.symbol.endsWith('USDT'));
 
-    const tickersData = binanceResponse.data;
-    const coincapAssetMap = new Map<string, any>();
-    if (coincapResponse?.data?.data) {
-      for (const coincapAsset of coincapResponse.data.data) {
-        coincapAssetMap.set(coincapAsset.id, coincapAsset);
-      }
-    }
+    // Filter out stablecoins (USDT, USDC, FDUSD) since they don't make sense as "Top Gainers" or volume leaders compared to themselves
+    const stableCoins = ['USDTUSDT', 'USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'BUSDUSDT', 'DAIUSDT', 'EURUSDT'];
+    tickersData = tickersData.filter(ticker => !stableCoins.includes(ticker.symbol));
 
-    return tickersData.map((ticker: any) => {
-      const matchedCoinId = coinIds.find(coinId => this.dictionary.getBinancePair(coinId) === ticker.symbol);
-      const staticCoinData = this.dictionary.getStaticData(matchedCoinId || '');
-      const coincapAsset = coincapAssetMap.get(matchedCoinId || '');
+    // Sort by quoteVolume to get the Top Volume (Major Liquidity)
+    const topVolumeTickers = [...tickersData]
+      .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
+      .slice(0, 7);
+
+    // Sort by priceChangePercent to get the Top Gainers (Biggest 24h pumpers, minimum volume 1M to avoid dead coins pumping 500% artificially)
+    const topGainersTickers = [...tickersData]
+      .filter(ticker => parseFloat(ticker.quoteVolume) > 1000000)
+      .sort((a, b) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent))
+      .slice(0, 7);
+
+    // We only need to fetch CoinGecko metadata for the unique coins we are keeping
+    const uniqueTickers = Array.from(new Set([...topVolumeTickers, ...topGainersTickers]));
+
+    // We can't await 14 requests concurrently without risking rate limits or massive delays.
+    // Instead we use the CoinGecko generic search /search (which is meant for individual queries).
+    // Better strategy for bulk: We just return the Binance data and let the frontend/backend use the standard CoinSummary route per coin if needed.
+    // However, to keep it self-contained in 1 request for the UI:
+    const enrichedMarkets = await Promise.all(uniqueTickers.map(async (ticker: any) => {
+      const baseSymbol = ticker.symbol.replace(/USDT$/, ''); // BTCUSDT -> BTC
+      const safeId = baseSymbol.toLowerCase();
+
+      let resolvedImage = null;
+      let resolvedName = baseSymbol;
+
+      try {
+         const cgSearchResponse = await firstValueFrom(this.httpService.get(`https://api.coingecko.com/api/v3/search?query=${baseSymbol}`, { timeout: 1500 }));
+         if (cgSearchResponse.data?.coins?.length > 0) {
+            const matchedAsset = cgSearchResponse.data.coins.find((c: any) => c.symbol.toLowerCase() === baseSymbol.toLowerCase()) || cgSearchResponse.data.coins[0];
+            resolvedImage = matchedAsset.large || matchedAsset.thumb;
+            resolvedName = matchedAsset.name;
+         }
+      } catch (e) {}
 
       return {
         _provider: 'binance',
-        id: matchedCoinId,
-        symbol: staticCoinData?.symbol,
-        name: staticCoinData?.name,
-        image: staticCoinData?.image,
+        id: safeId, // We use the symbol as the generic ID (btc, eth)
+        symbol: baseSymbol,
+        name: resolvedName,
+        image: resolvedImage || '',
         current_price: parseFloat(ticker.lastPrice),
         total_volume: parseFloat(ticker.quoteVolume),
         price_change_percentage_24h: parseFloat(ticker.priceChangePercent),
-        market_cap: coincapAsset ? parseFloat(coincapAsset.marketCapUsd) : 0,
-        market_cap_rank: coincapAsset ? parseInt(coincapAsset.rank, 10) : 0,
+        market_cap: 0,
+        market_cap_rank: 0,
       };
-    });
+    }));
+
+    return enrichedMarkets;
   }
 
   async getCoinData(id: string): Promise<any> {
+    // Attempt to enrich metadata using CoinGecko search API FIRST
+    let resolvedName = id;
+    let resolvedSymbol = id.toUpperCase();
+    let resolvedImage = null;
+    let marketRank = 0;
+
+    try {
+      // Small timeout to not block UI forever if CG is down
+      const cgSearchResponse = await firstValueFrom(this.httpService.get(`https://api.coingecko.com/api/v3/search?query=${id}`, { timeout: 3000 }));
+      if (cgSearchResponse.data?.coins?.length > 0) {
+        // Match exact symbol or exact id to prevent "HEMI" finding something random starting with H
+        const matchedAsset = cgSearchResponse.data.coins.find((c: any) => c.symbol.toLowerCase() === id.toLowerCase() || c.id.toLowerCase() === id.toLowerCase()) || cgSearchResponse.data.coins[0];
+        resolvedName = matchedAsset.name;
+        resolvedSymbol = matchedAsset.symbol.toUpperCase();
+        resolvedImage = matchedAsset.large || matchedAsset.thumb;
+        marketRank = matchedAsset.market_cap_rank || 0;
+      }
+    } catch (e) {
+      this.logger.warn(`CoinGecko enrichment failed for ${id}`);
+    }
+
+    const staticCoinData = this.dictionary.getStaticData(id);
+    if (!resolvedName || resolvedName === id) resolvedName = staticCoinData?.name || id;
+    if (!resolvedImage) resolvedImage = staticCoinData?.image; // ui-avatars fallback
+
     const tradingPair = this.dictionary.getBinancePair(id);
     if (!tradingPair) throw new Error(`Binance pairing not found for ${id}`);
 
     const { data: tickerData } = await firstValueFrom(this.httpService.get(`${this.baseUrl}/ticker/24hr?symbol=${tradingPair}`));
-    const staticCoinData = this.dictionary.getStaticData(id);
-
-    let resolvedName = staticCoinData?.name;
-    let resolvedSymbol = staticCoinData?.symbol;
-    let marketCap = 0;
-    let marketRank = 0;
-
-    // Attempt to enrich missing name and market cap using CoinCap metadata
-    if (!this.dictionary.hasMapping(id)) {
-      try {
-        const coincapSearchResponse = await firstValueFrom(this.httpService.get(`https://api.coincap.io/v2/assets?search=${id}&limit=1`));
-        if (coincapSearchResponse.data?.data?.length > 0) {
-          const matchedAsset = coincapSearchResponse.data.data[0];
-          resolvedName = matchedAsset.name;
-          resolvedSymbol = matchedAsset.symbol;
-          marketCap = parseFloat(matchedAsset.marketCapUsd) || 0;
-          marketRank = parseInt(matchedAsset.rank, 10) || 0;
-        }
-      } catch (_enrichmentError) {
-        // Silently ignore and stick to fallback mock
-      }
-    }
 
     return {
       _provider: 'binance',
       id: id,
       symbol: resolvedSymbol,
       name: resolvedName,
-      image: staticCoinData?.image,
+      image: resolvedImage,
       current_price: parseFloat(tickerData.lastPrice),
       total_volume: parseFloat(tickerData.quoteVolume),
       price_change_percentage_24h: parseFloat(tickerData.priceChangePercent),
-      market_cap: marketCap,
+      market_cap: 0,
       market_cap_rank: marketRank
     };
   }

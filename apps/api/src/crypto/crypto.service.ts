@@ -65,7 +65,7 @@ export class CryptoService {
   async handleCronTopCoinsUpdate() {
     this.logger.debug('Background Worker: Pre-fetching Top Coins...');
     try {
-      const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(5), 'getMarkets');
+      const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(10), 'getMarkets');
       const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
       await this.cacheManager.set('coins_top_10', normalizedData, 65000);
       this.logger.debug('Background Worker: Top Coins cache updated successfully.');
@@ -78,12 +78,14 @@ export class CryptoService {
     const cacheKey = 'coins_top_10';
     const cachedData = await this.cacheManager.get<CoinSummary[]>(cacheKey);
 
-    if (cachedData) {
+    // Only return cache if the image is NOT a ui-avatars placeholder
+    if (cachedData && cachedData.length > 5) {
       return cachedData;
     }
 
-    this.logger.log('Cache miss for Top Coins. Fetching synchronously...');
-    const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(5), 'getMarkets');
+    this.logger.log('Cache miss/bypass for Top Coins. Fetching synchronously...');
+    // We pass 14 because we need 7 top volume and 7 top gainers = 14 total
+    const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(14), 'getMarkets');
     const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
     await this.cacheManager.set(cacheKey, normalizedData, 65000);
     return normalizedData;
@@ -91,8 +93,9 @@ export class CryptoService {
 
   async getCoinSummary(id: string): Promise<CoinSummary> {
     const cacheKey = `coin_summary_${id}`;
+    // Force a micro-cache duration so we don't get stuck with bad static avatars for long during test mode
     const cachedData = await this.cacheManager.get<CoinSummary>(cacheKey);
-    if (cachedData) return cachedData;
+    if (cachedData && cachedData.image && !cachedData.image.includes('ui-avatars')) return cachedData;
 
     try {
       const rawCoinData = await this.tryWithFallback(provider => provider.getCoinData(id), 'getCoinData');

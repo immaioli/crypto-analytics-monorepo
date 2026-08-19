@@ -8,6 +8,7 @@ import { BinanceClientService } from './services/binance-client.service.js';
 import { CoinCapClientService } from './services/coincap-client.service.js';
 import { CryptoDictionaryService } from './services/crypto-dictionary.service.js';
 import { CryptoMathService } from './services/crypto-math.service.js';
+import { BinanceGateway } from './gateways/binance.gateway.js';
 
 const logger = new Logger('CacheConfig');
 
@@ -27,14 +28,21 @@ const logger = new Logger('CacheConfig');
         const port = Number(process.env.REDIS_PORT ?? 6379);
 
         try {
-          const store = await redisStore({
-            url: `redis://${host}:${port}`
-          });
-          logger.log('Connected to Redis cache store.');
-          return {
-            store,
-            ttl: 60000 // 1 minute default
-          };
+          // If Redis is explicitly configured with a different host (like running via Docker Compose), use it
+          // Otherwise, force in-memory to prevent local dev environments crashing without Redis installed.
+          if (process.env.REDIS_HOST && process.env.REDIS_HOST !== 'localhost') {
+            const store = await redisStore({
+              url: `redis://${host}:${port}`,
+              socket: {
+                reconnectStrategy: false // Don't crash loop on failure
+              }
+            });
+            logger.log('Connected to Redis cache store.');
+            return { store, ttl: 60000 };
+          } else {
+            logger.log('Local environment detected: using in-memory cache to prevent Redis ECONNREFUSED.');
+            return { ttl: 60000 };
+          }
         } catch (error) {
           logger.warn('Redis unavailable, falling back to in-memory cache.');
           return { ttl: 60000 };
@@ -49,6 +57,7 @@ const logger = new Logger('CacheConfig');
     CoinCapClientService,
     CryptoDictionaryService,
     CryptoMathService,
+    BinanceGateway,
   ],
 })
 export class CryptoModule {}

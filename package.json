@@ -1,8 +1,8 @@
 {
-  "name": "dashboard-cripto",
+  "name": "crypto-analytics-monorepo",
   "version": "0.1.0",
   "private": true,
-  "description": "Top-10 crypto dashboard — NestJS API, Next.js web, Redis cache",
+  "description": "High-performance cryptocurrency analytics platform built with NestJS, Next.js 14, and React Query. Features Spec-Driven Development, real-time WebSocket trading data, multi-layer Circuit Breakers, and Canvas-based interactive charts.",
   "workspaces": [
     "apps/*",
     "packages/*"
