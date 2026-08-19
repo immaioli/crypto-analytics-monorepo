@@ -22,15 +22,18 @@ export interface ChartPriceLine {
 
 export interface MultiLineSeriesConfig {
   id: string;
-  data: { time: Time; value: number }[];
-  color: string;
+  data: { time: Time; value: number; color?: string }[];
+  color?: string;
   title: string;
+  type?: 'line' | 'histogram';
+  priceScaleId?: string;
 }
 
 export interface LightweightChartWrapperProps {
   type: 'area' | 'candlestick' | 'histogram' | 'line' | 'multi-line';
   data?: ChartDataType; // Optional for multi-line
   multiLineData?: MultiLineSeriesConfig[]; // Used only for 'multi-line' type
+  liveUpdate?: any; // New tick data to update the chart in real-time
   priceLines?: ChartPriceLine[];
   seriesConfig?: {
     lastValueVisible?: boolean;
@@ -51,7 +54,7 @@ export interface LightweightChartWrapperProps {
   height?: number;
 }
 
-export function LightweightChartWrapper({ type, data, multiLineData, priceLines, seriesConfig, colors, height = 400 }: LightweightChartWrapperProps) {
+export function LightweightChartWrapper({ type, data, multiLineData, liveUpdate, priceLines, seriesConfig, colors, height = 400 }: LightweightChartWrapperProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
@@ -165,13 +168,33 @@ export function LightweightChartWrapper({ type, data, multiLineData, priceLines,
     }
 
     if (type === 'multi-line' && multiLineData) {
+      // Independent Y-axes so volume bars don't flatten the price/MA line
+      chart.priceScale('left').applyOptions({
+        visible: true,
+        borderColor: 'rgba(51, 65, 85, 0.4)',
+      });
+      chart.priceScale('right').applyOptions({
+        visible: true,
+        borderColor: 'rgba(51, 65, 85, 0.4)',
+      });
+
       multiLineData.forEach(lineConfig => {
-        const lineSeries = chart.addLineSeries({
-          color: lineConfig.color,
-          lineWidth: 2,
-          title: lineConfig.title,
-        });
-        lineSeries.setData(lineConfig.data as any);
+        if (lineConfig.type === 'histogram') {
+          const histSeries = chart.addHistogramSeries({
+            color: lineConfig.color || defaultTheme.lineColor,
+            priceScaleId: lineConfig.priceScaleId || 'left',
+            title: lineConfig.title,
+          });
+          histSeries.setData(lineConfig.data as any);
+        } else {
+          const lineSeries = chart.addLineSeries({
+            color: lineConfig.color || defaultTheme.lineColor,
+            lineWidth: 2,
+            priceScaleId: lineConfig.priceScaleId || 'right',
+            title: lineConfig.title,
+          });
+          lineSeries.setData(lineConfig.data as any);
+        }
       });
     }
 
@@ -219,6 +242,13 @@ export function LightweightChartWrapper({ type, data, multiLineData, priceLines,
       chart.remove();
     };
   }, [type, data, multiLineData, priceLines, height]); // Re-initialize if type, data reference, or height changes
+
+  // 6. Handle Live Updates efficiently without re-rendering the whole chart
+  useEffect(() => {
+    if (liveUpdate && seriesRef.current) {
+      seriesRef.current.update(liveUpdate as any);
+    }
+  }, [liveUpdate]);
 
   return (
     <div

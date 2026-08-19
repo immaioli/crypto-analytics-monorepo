@@ -89,7 +89,7 @@ export function AssetSearchInput() {
         </div>
       </form>
       {notFoundError && (
-        <span className="text-rose-500 text-sm font-medium ml-1">{notFoundError}</span>
+        <span className="text-rose-500 text-[15px] font-semibold ml-1">{notFoundError}</span>
       )}
     </div>
   );

@@ -166,8 +166,9 @@ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
 
         {(!isError || multiLineData) && multiLineData && multiLineData.length > 0 && (
           <>
-            <div className="mb-2 text-sm text-slate-400">
-              Showing performance index (Base-0%) comparison.
+            <div className="flex flex-col sm:flex-row justify-between mb-2 text-sm text-slate-400">
+              <span>Showing performance index (Base-0%) comparison.</span>
+              <span className="italic">Max 5 coins allowed for clarity.</span>
             </div>
             <LightweightChartWrapper
               type="multi-line"

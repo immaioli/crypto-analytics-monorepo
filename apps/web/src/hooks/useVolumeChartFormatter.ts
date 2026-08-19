@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
-import { ChartDataType } from '@/components/charts/LightweightChartWrapper';
+import { MultiLineSeriesConfig } from '@/components/charts/LightweightChartWrapper';
 import { CoinHistory } from '@dashboard-cripto/shared-types';
 
 export function useVolumeChartFormatter(historyData: CoinHistory | undefined) {
-  const chartData: ChartDataType | undefined = useMemo(() => {
+  const multiLineData: MultiLineSeriesConfig[] | undefined = useMemo(() => {
     if (!historyData || historyData?.prices.length === 0) return undefined;
 
-    return historyData?.prices.map((point, index) => {
+    const volumeData = historyData.prices.map((point, index) => {
       // Logic for coloring the volume bar: green if price went up, red if price went down
       let color = '#3b82f6'; // Default blue
       if (index > 0) {
-        const prevPrice = historyData?.prices[index - 1].price;
+        const prevPrice = historyData.prices[index - 1].price;
         if (point.price > prevPrice) {
           color = 'rgba(16, 185, 129, 0.7)'; // Emerald 500 with opacity
         } else {
@@ -24,7 +24,29 @@ export function useVolumeChartFormatter(historyData: CoinHistory | undefined) {
         color,
       };
     });
+
+    const priceData = historyData.prices.map(point => ({
+      time: (point.timestampMs / 1000) as any,
+      value: point.price,
+    }));
+
+    return [
+      {
+        id: 'volume',
+        data: volumeData,
+        title: 'Volume',
+        type: 'histogram',
+        priceScaleId: 'left', // Escala independente no eixo esquerdo (se suportado pelo wrapper) ou principal se sobreposto
+      },
+      {
+        id: 'price',
+        data: priceData,
+        title: 'Price (MA)',
+        type: 'line',
+        color: '#3b82f6', // Linha de tendência sobreposta
+      }
+    ];
   }, [historyData]);
 
-  return { chartData };
+  return { multiLineData };
 }

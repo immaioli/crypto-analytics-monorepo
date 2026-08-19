@@ -5,7 +5,7 @@ test.describe('Dashboard Navigation and Caching E2E', () => {
   test('Should navigate tabs, search multiple coins, and validate layout', async ({ page }) => {
     test.setTimeout(86400000); // 24 hours just in case
     // Acessa o dashboard local
-    await page.goto('/');
+    await page.goto('http://localhost:3000');
 
     // 1. Confirma que a página carregou a listagem de Top Coins
     await expect(page.getByRole('heading', { name: 'Crypto Analytics' })).toBeVisible({ timeout: 15000 });
@@ -14,7 +14,7 @@ test.describe('Dashboard Navigation and Caching E2E', () => {
 
     for (const coin of coinsToTest) {
       console.log(`Testing search for ${coin}...`);
-      const searchInput = page.getByPlaceholder('Search any coin ID');
+      const searchInput = page.getByPlaceholder('Search by exact symbol');
       await searchInput.fill(coin);
       const searchButton = page.getByRole('button', { name: 'Search' });
       await searchButton.click();

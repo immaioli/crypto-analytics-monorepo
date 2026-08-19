@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOhlc } from '@/hooks/useOhlc';
 import { useOhlcChartFormatter } from '@/hooks/useOhlcChartFormatter';
+import { useLiveTicker } from '@/hooks/useLiveTicker';
 import { LightweightChartWrapper } from '../charts/LightweightChartWrapper';
 import { CoinSummary, SupportedPeriod } from '@dashboard-cripto/shared-types';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
@@ -18,7 +19,7 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
   const { selectedAssetId } = useAssetSelection();
 
   const [localCoinId, setLocalCoinId] = useState<string>(
-    selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" || "" : '')
+    selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" : '')
   );
 
   useEffect(() => {
@@ -30,16 +31,37 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
   const [days, setDays] = useState<SupportedPeriod>('1');
 
   const { data: ohlcData, isLoading, isError } = useOhlc(localCoinId, days);
+  const { liveData } = useLiveTicker(localCoinId);
 
   // Formatting extracted to Custom Hook (Separation of Concerns)
   const { chartData, priceLines } = useOhlcChartFormatter(ohlcData);
+
+  // Format the live tick for Lightweight Charts Time
+  const liveUpdate = liveData ? {
+    time: (Math.floor(liveData.time / 1000)) as any,
+    open: liveData.open,
+    high: liveData.high,
+    low: liveData.low,
+    close: liveData.close,
+  } : undefined;
 
   if (!coins || coins.length === 0) return null;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <SelectedAssetBadge fallbackId={coins.length > 0 ? coins[0]?.id || "" || "" : ""} />
+        <div className="flex items-center gap-4">
+          <SelectedAssetBadge fallbackId={coins.length > 0 ? coins[0]?.id || "" : ""} />
+          {liveData && (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded border border-emerald-500/20">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-xs text-emerald-400 font-medium">Live</span>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           {isLoading && (
             <div className="flex items-center justify-center p-1">
@@ -58,6 +80,7 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
             <LightweightChartWrapper
               type="candlestick"
               data={chartData}
+              liveUpdate={liveUpdate}
               priceLines={priceLines}
               seriesConfig={{
                 title: 'Current',
