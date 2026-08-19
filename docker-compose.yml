@@ -1,54 +1,58 @@
+version: '3.8'
+
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: dashboard-cripto-redis
-    ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: crypto_web
     restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # Redirecionamos a variável do Frontend para buscar o backend direto pela porta local ou proxy
+      # No docker-compose local, pode ser a API interna. Mas em prod, deve ser o IP público ou proxy.
+      # Usaremos caminho relativo (/) para bater no nginx e ele rotear pro /api.
+      - NEXT_PUBLIC_API_URL=/api
+    depends_on:
+      - api
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: dashboard-cripto-api
-    ports:
-      - "3001:3001"
-    env_file:
-      - .env
-    environment:
-      NODE_ENV: development
-      PORT: 3001
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-    depends_on:
-      redis:
-        condition: service_healthy
+    container_name: crypto_api
     restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
 
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-    container_name: dashboard-cripto-web
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:3001
-      API_INTERNAL_URL: http://api:3001
-    depends_on:
-      - api
+  redis:
+    image: redis:7-alpine
+    container_name: crypto_redis
     restart: unless-stopped
+    # Expor porta externa apenas para debug local (remova em PRD estrito)
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+
+  nginx:
+    image: nginx:alpine
+    container_name: crypto_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+      - api
 
 volumes:
-  redis-data:
+  redis_data:
