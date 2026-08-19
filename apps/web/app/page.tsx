@@ -9,7 +9,6 @@ import { CompareChartFeature } from '@/components/features/CompareChartFeature';
 import { VolumeProfileFeature } from '@/components/features/VolumeProfileFeature';
 import { RadarAnalysisFeature } from '@/components/features/RadarAnalysisFeature';
 import { DeepDiveStatsFeature } from '@/components/features/DeepDiveStatsFeature';
-import { CountdownTimer } from '@/components/ui/CountdownTimer';
 
 export default function Page() {
   const { data: topCoins } = useTopCoins();
@@ -50,10 +49,7 @@ export default function Page() {
       </section>
 
       <section className="bg-slate-900/30 p-6 rounded-2xl border border-slate-800/50 shadow-xl shadow-black/20">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Advanced Analytics</h2>
-          <CountdownTimer intervalMs={60000} />
-        </div>
+        <h2 className="text-xl font-semibold text-white mb-6">Advanced Analytics</h2>
         <Tabs tabs={chartTabs} />
       </section>
     </div>

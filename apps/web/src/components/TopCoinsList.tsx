@@ -4,16 +4,35 @@ import React from 'react';
 import { useTopCoins } from '@/hooks/useTopCoins';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { CoinCard } from './ui/CoinCard';
+import { useCoinSummary } from '@/hooks/useCoinSummary';
+
+function CustomCoinCard({ id, onRemove }: { id: string, onRemove: (id: string) => void }) {
+  const { data: coin, isLoading } = useCoinSummary(id);
+  const { selectedAssetId, setSelectedAssetId } = useAssetSelection();
+
+  if (isLoading || !coin) {
+    return <div className="h-[90px] bg-slate-800 rounded-xl animate-pulse border border-slate-700"></div>;
+  }
+
+  return (
+    <CoinCard
+      coin={coin}
+      isSelected={selectedAssetId === coin.id}
+      onClick={setSelectedAssetId}
+      onRemove={onRemove}
+    />
+  );
+}
 
 export function TopCoinsList() {
   const { data: coins, isLoading, isError, error } = useTopCoins();
-  const { selectedAssetId, setSelectedAssetId } = useAssetSelection();
+  const { selectedAssetId, setSelectedAssetId, customCoins, removeCustomCoin } = useAssetSelection();
 
   if (isLoading) {
     return (
-      <div data-testid="loading-indicator" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-24 bg-slate-800 rounded-xl animate-pulse border border-slate-700"></div>
+      <div data-testid="loading-indicator" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="h-[90px] bg-slate-800 rounded-xl animate-pulse border border-slate-700"></div>
         ))}
       </div>
     );
@@ -31,8 +50,12 @@ export function TopCoinsList() {
     return <div className="text-slate-400">No coins found.</div>;
   }
 
+  // Filter out any custom coins that are already in the Top 5 to avoid duplication
+  const topCoinIds = coins.map(coin => coin.id);
+  const uniqueCustomCoins = customCoins.filter(id => !topCoinIds.includes(id));
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3">
       {coins.map((coin) => {
         const isSelected = selectedAssetId === coin.id || (!selectedAssetId && coins[0].id === coin.id);
 
@@ -45,6 +68,10 @@ export function TopCoinsList() {
           />
         );
       })}
+
+      {uniqueCustomCoins.map(id => (
+        <CustomCoinCard key={id} id={id} onRemove={removeCustomCoin} />
+      ))}
     </div>
   );
 }

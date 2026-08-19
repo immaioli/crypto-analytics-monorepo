@@ -22,7 +22,7 @@ const fetcher = async (url: string) => {
 
 export function VolumeProfileFeature({ coins }: VolumeProfileFeatureProps) {
   const { selectedAssetId } = useAssetSelection();
-  const [days, setDays] = useState<SupportedPeriod>('7');
+  const [days, setDays] = useState<SupportedPeriod>('1');
 
   const localCoinId = selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" || "" : '');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';

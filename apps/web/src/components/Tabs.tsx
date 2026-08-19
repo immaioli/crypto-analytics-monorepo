@@ -58,7 +58,7 @@ export function Tabs({ tabs, defaultTabId }: TabsProps) {
               role="tabpanel"
               id={`panel-${tab.id}`}
               aria-labelledby={`tab-${tab.id}`}
-              className={`w-full outline-none focus:ring-0 ${!isActive ? 'hidden' : ''}`}
+              className={`w-full outline-none focus:ring-0 ${!isActive ? 'opacity-0 pointer-events-none absolute h-0 overflow-hidden -z-10' : 'relative z-0 h-auto'}`}
               tabIndex={0}
             >
               {tab.content}

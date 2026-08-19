@@ -28,12 +28,13 @@ export function RadarAnalysisFeature({ coins }: RadarAnalysisFeatureProps) {
 
   if (!coins || coins.length === 0) return null;
 
-  // Em uma analise real (Staff level), voce faria a normalizacao desses dados
-  // contra a media do mercado para criar um index (0 a 100) para cada eixo do radar.
-  // Aqui estamos criando uma normalizacao simulada baseada nos proprios Top 5
-  // para demonstrar a arquitetura visual de analise de fundos.
+  // In a real analysis (Staff level), you would normalize this data
+  // against the market average to create an index (0 to 100) for each radar axis.
+  // Here we are creating a simulated normalization based on the Top 5 themselves
+  // to demonstrate the visual architecture of fund analysis.
 
-  const maxMarketCap = Math.max(...coins.map(c => c.marketCap), marketCap);
+  // If the data comes from Binance, Market Cap is 0 by default. We will normalize based on Price and Volume
+  const maxPrice = Math.max(...coins.map(c => c.currentPrice), selectedCoin?.currentPrice || 1);
   const maxVolume = Math.max(...coins.map(c => c.totalVolume), totalVolume);
 
   const absPriceChanges = coins.map(c => Math.abs(c.priceChangePercentage24h));
@@ -41,8 +42,8 @@ export function RadarAnalysisFeature({ coins }: RadarAnalysisFeatureProps) {
 
   const data = [
     {
-      subject: 'Dominance (Market Cap)',
-      A: (marketCap / maxMarketCap) * 100,
+      subject: 'Value (Price Index)',
+      A: ((selectedCoin?.currentPrice || 1) / maxPrice) * 100,
       fullMark: 100,
     },
     {
@@ -51,8 +52,8 @@ export function RadarAnalysisFeature({ coins }: RadarAnalysisFeatureProps) {
       fullMark: 100,
     },
     {
-      subject: 'Momentum (24h Change)',
-      A: (priceChange > 0 ? 80 : 20), // Simplificacao para o momentum
+      subject: 'Momentum (Direction)',
+      A: (priceChange > 0 ? 80 : 20), // Simplification for directional momentum
       fullMark: 100,
     },
     {
@@ -61,9 +62,9 @@ export function RadarAnalysisFeature({ coins }: RadarAnalysisFeatureProps) {
       fullMark: 100,
     },
     {
-      subject: 'Market Rank',
-      // Rank 1 = 100 score, Rank 5 = 20 score (inverted scale)
-      A: Math.max(0, 100 - (rank * 10)),
+      subject: 'Stability Profile',
+      // Less volatility = more stability
+      A: 100 - ((Math.abs(priceChange) / maxVolatility) * 100),
       fullMark: 100,
     }
   ];

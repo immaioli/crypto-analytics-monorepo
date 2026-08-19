@@ -72,9 +72,9 @@ export function LightweightChartWrapper({ type, data, multiLineData, priceLines,
     if (!chartContainerRef.current) return;
 
     const containerWidth = chartContainerRef.current.clientWidth;
-    // Precisamos de um espaço físico fixo em pixels para as legendas (aprox 80px),
-    // não importa quantos candles existam. O Lightweight Charts usa 'rightOffset' em "quantidade de barras".
-    // Então calculamos dinamicamente quantas barras equivalem a 80px no zoom atual.
+    // We need a fixed physical space in pixels for the legends (approx 80px),
+    // no matter how many candles exist. Lightweight Charts uses 'rightOffset' in "number of bars".
+    // So we dynamically calculate how many bars equal 80px at the current zoom.
     const labelSpacePx = 80;
 
     // For multi-line, data length is based on the first series
@@ -193,17 +193,29 @@ export function LightweightChartWrapper({ type, data, multiLineData, priceLines,
 
     chart.timeScale().fitContent();
 
-    // 4. Handle Window Resize
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.resize(chartContainerRef.current.clientWidth, height);
+    // 4. Handle Element Resize
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      if (!chartContainerRef.current) return;
+
+      for (const entry of entries) {
+        const { width, height: entryHeight } = entry.contentRect;
+        // Only resize if we have meaningful dimensions
+        if (width > 0 && height > 0) {
+          chart.resize(width, height);
+          chart.timeScale().fitContent();
+        }
       }
     };
-    window.addEventListener('resize', handleResize);
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(chartContainerRef.current);
 
     // 5. Cleanup on Unmount
     return () => {
-      window.removeEventListener('resize', handleResize);
+      if (chartContainerRef.current) {
+        resizeObserver.unobserve(chartContainerRef.current);
+      }
+      resizeObserver.disconnect();
       chart.remove();
     };
   }, [type, data, multiLineData, priceLines, height]); // Re-initialize if type, data reference, or height changes

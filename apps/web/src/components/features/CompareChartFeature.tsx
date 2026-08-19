@@ -20,7 +20,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f43f5e', '#eab308', '#8b5cf6'];
 export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
   // Default to comparing the top 2 coins (usually BTC and ETH)
   const [selectedIds, setSelectedIds] = useState<string[]>(
-    coins.slice(0, 2).map(c => c.id)
+    coins.slice(0, 2).map(coinData => coinData.id)
   );
   const [days, setDays] = useState<SupportedPeriod>('7');
 
@@ -30,24 +30,43 @@ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
   const { multiLineData } = useCompareChartFormatter(data, selectedIds);
 
   // Listen to the global Asset Selection to add a coin to the comparison chart dynamically
-  const { selectedAssetId } = useAssetSelection();
+  const { selectedAssetId, customCoins } = useAssetSelection();
   React.useEffect(() => {
     if (selectedAssetId && !selectedIds.includes(selectedAssetId)) {
-      setSelectedIds(prev => {
-        if (prev.length >= 5) return [...prev.slice(1), selectedAssetId]; // Rotate out the oldest if we hit 5
-        return [...prev, selectedAssetId];
+      setSelectedIds(previousIds => {
+        if (previousIds.length >= 5) return [...previousIds.slice(1), selectedAssetId]; // Rotate out the oldest if we hit 5
+        return [...previousIds, selectedAssetId];
       });
     }
   }, [selectedAssetId]);
 
+  const [resolvedNames, setResolvedNames] = useState<Record<string, {name: string, symbol: string}>>({});
+
+  // Cache resolved names so deselected custom coins don't lose their real names
+  React.useEffect(() => {
+    if (data?.coins) {
+      setResolvedNames(previousResolvedNames => {
+        const nextResolvedNames = { ...previousResolvedNames };
+        let hasChanges = false;
+        data.coins.forEach(coinData => {
+          if (!nextResolvedNames[coinData.id] || nextResolvedNames[coinData.id].name !== coinData.name) {
+            nextResolvedNames[coinData.id] = { name: coinData.name, symbol: coinData.symbol };
+            hasChanges = true;
+          }
+        });
+        return hasChanges ? nextResolvedNames : previousResolvedNames;
+      });
+    }
+  }, [data]);
+
   const toggleCoin = (id: string) => {
-    setSelectedIds(prev => {
-      if (prev.includes(id)) {
-        if (prev.length <= 1) return prev; // Keep at least one
-        return prev.filter(c => c !== id);
+    setSelectedIds(previousIds => {
+      if (previousIds.includes(id)) {
+        if (previousIds.length <= 1) return previousIds; // Keep at least one
+        return previousIds.filter(coinId => coinId !== id);
       }
-      if (prev.length >= 5) return prev; // Max 5 to avoid visual clutter
-      return [...prev, id];
+      if (previousIds.length >= 5) return previousIds; // Max 5 to avoid visual clutter
+      return [...previousIds, id];
     });
   };
 
@@ -58,26 +77,31 @@ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
   const top8Coins = coins.slice(0, 8);
   const displayCoins = [...top8Coins];
 
-  // Add selected coins that are not in the top 8 (like from search)
-  // We need to fetch their summary data or use a fallback.
-  selectedIds.forEach(id => {
-    if (!displayCoins.find(c => c.id === id)) {
-      const foundInAll = coins.find(c => c.id === id);
+  // Combine top 8 coins + currently selected ones + any custom coins in the market overview
+  const allIdsToDisplay = Array.from(new Set([
+    ...top8Coins.map(coinData => coinData.id),
+    ...selectedIds,
+    ...customCoins
+  ]));
+
+  allIdsToDisplay.forEach(id => {
+    if (!displayCoins.find(coinData => coinData.id === id)) {
+      const foundInAll = coins.find(coinData => coinData.id === id);
       if (foundInAll) {
         displayCoins.push(foundInAll);
       } else {
         // Fallback for searched coins not in the initial `coins` list
-        // We'll extract info from `data` if available
-        const fromData = data?.coins.find(c => c.id === id);
-        if (fromData) {
-          displayCoins.push({
-            id: fromData.id,
-            name: fromData.name,
-            symbol: fromData.symbol,
-            image: '', // We don't have the image in CompareResponse currently
-            currentPrice: 0, marketCap: 0, marketCapRank: 0, totalVolume: 0, priceChangePercentage24h: 0
-          });
-        }
+        // Try to get info from current data response or from our cache
+        const fromData = data?.coins.find(coinData => coinData.id === id);
+        const cached = resolvedNames[id];
+
+        displayCoins.push({
+          id: id,
+          name: fromData ? fromData.name : (cached ? cached.name : id.charAt(0).toUpperCase() + id.slice(1).toLowerCase()),
+          symbol: fromData ? fromData.symbol : (cached ? cached.symbol : id.toUpperCase()),
+          image: '', // We don't have the image in CompareResponse currently
+          currentPrice: 0, marketCap: 0, marketCapRank: 0, totalVolume: 0, priceChangePercentage24h: 0
+        });
       }
     }
   });

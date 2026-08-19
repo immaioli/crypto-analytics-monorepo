@@ -1,50 +1,68 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CryptoService } from './crypto.service.js';
-import { HttpService } from '@nestjs/axios';
 import { Cache } from 'cache-manager';
-import { of, throwError } from 'rxjs';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { BinanceClientService } from './services/binance-client.service.js';
+import { CoinCapClientService } from './services/coincap-client.service.js';
+import { CryptoMathService } from './services/crypto-math.service.js';
 
 describe('CryptoService', () => {
   let service: CryptoService;
-  let httpService: HttpService;
   let cacheManager: Cache;
+  let binanceClient: BinanceClientService;
+  let coincapClient: CoinCapClientService;
+  let mathService: CryptoMathService;
 
   beforeEach(() => {
-    httpService = {
-      get: vi.fn(),
-    } as any;
-
     cacheManager = {
       get: vi.fn(),
       set: vi.fn(),
     } as any;
 
-    service = new CryptoService(httpService, cacheManager);
+    binanceClient = {
+      getMarkets: vi.fn(),
+      getCoinData: vi.fn(),
+      getOhlc: vi.fn(),
+      getMarketChart: vi.fn(),
+    } as any;
+
+    coincapClient = {
+      getMarkets: vi.fn(),
+      getCoinData: vi.fn(),
+      getOhlc: vi.fn(),
+      getMarketChart: vi.fn(),
+    } as any;
+
+    mathService = new CryptoMathService();
+
+    const dictionary = {
+      getStaticData: vi.fn().mockReturnValue(null)
+    } as any;
+
+    service = new CryptoService(
+      cacheManager,
+      binanceClient,
+      coincapClient,
+      dictionary,
+      mathService,
+    );
   });
 
   describe('getOhlc', () => {
-    it('returns formatted OHLC data and caches it', async () => {
-      const mockCoingeckoResponse = {
-        data: [
-          [1692057600000, 29000, 29500, 28500, 29200],
-          [1692144000000, 29200, 29800, 29000, 29700],
-        ],
-      };
+    it('returns formatted OHLC data from Binance and caches it', async () => {
+      const mockOhlcData = [
+        [1692057600000, 29000, 29500, 28500, 29200],
+        [1692144000000, 29200, 29800, 29000, 29700],
+      ];
 
       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
-      vi.spyOn(httpService, 'get').mockReturnValue(of(mockCoingeckoResponse as any));
+      vi.spyOn(binanceClient, 'getOhlc').mockResolvedValue(mockOhlcData);
       const setSpy = vi.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
 
       const result = await service.getOhlc('bitcoin', '7');
 
-      expect(httpService.get).toHaveBeenCalledWith('/coins/bitcoin/ohlc', expect.objectContaining({
-        params: { vs_currency: 'usd', days: '7' }
-      }));
-      expect(result).toEqual([
-        [1692057600000, 29000, 29500, 28500, 29200],
-        [1692144000000, 29200, 29800, 29000, 29700],
-      ]);
+      expect(binanceClient.getOhlc).toHaveBeenCalledWith('bitcoin', '7');
+      expect(result).toEqual(mockOhlcData);
       expect(setSpy).toHaveBeenCalledWith('coins_bitcoin_ohlc_7', result, 60000);
     });
 
@@ -57,53 +75,59 @@ describe('CryptoService', () => {
       const result = await service.getOhlc('bitcoin', '7');
 
       expect(cacheManager.get).toHaveBeenCalledWith('coins_bitcoin_ohlc_7');
-      expect(httpService.get).not.toHaveBeenCalled();
+      expect(binanceClient.getOhlc).not.toHaveBeenCalled();
       expect(result).toEqual(cachedData);
     });
 
-    it('throws Bad Gateway on coingecko error', async () => {
+    it('falls back to CoinCap when Binance fails', async () => {
+      const mockOhlcData = [
+        [1692057600000, 29000, 29500, 28500, 29200],
+      ];
+
       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
-      vi.spyOn(httpService, 'get').mockReturnValue(throwError(() => ({
-        response: { data: { status: { error_message: 'Rate limit' } } }
-      })));
+      vi.spyOn(binanceClient, 'getOhlc').mockRejectedValue(new Error('Binance down'));
+      vi.spyOn(coincapClient, 'getOhlc').mockResolvedValue(mockOhlcData);
+      vi.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
+
+      const result = await service.getOhlc('bitcoin', '7');
+
+      expect(binanceClient.getOhlc).toHaveBeenCalled();
+      expect(coincapClient.getOhlc).toHaveBeenCalledWith('bitcoin', '7');
+      expect(result).toEqual(mockOhlcData);
+    });
+
+    it('throws Bad Gateway when ALL providers fail', async () => {
+      vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
+      vi.spyOn(binanceClient, 'getOhlc').mockRejectedValue(new Error('Binance down'));
+      vi.spyOn(coincapClient, 'getOhlc').mockRejectedValue(new Error('CoinCap down'));
 
       await expect(service.getOhlc('bitcoin', '7')).rejects.toThrow(HttpException);
       await expect(service.getOhlc('bitcoin', '7')).rejects.toMatchObject({
         status: HttpStatus.BAD_GATEWAY,
-        response: { message: 'Rate limit' }
       });
     });
   });
 
   describe('getHistory', () => {
     it('normalizes history data correctly and caches it', async () => {
-      const mockCoingeckoResponse = {
-        data: {
-          prices: [
-            [1692057600000, 29000],
-            [1692144000000, 29200],
-          ],
-          market_caps: [
-            [1692057600000, 500000000],
-            [1692144000000, 510000000],
-          ],
-          total_volumes: [
-            [1692057600000, 20000000],
-            [1692144000000, 21000000],
-          ],
-        }
+      const mockMarketChart = {
+        prices: [
+          [1692057600000, 29000] as [number, number],
+          [1692144000000, 29200] as [number, number],
+        ],
+        total_volumes: [
+          [1692057600000, 20000000] as [number, number],
+          [1692144000000, 21000000] as [number, number],
+        ],
       };
 
       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
-      vi.spyOn(httpService, 'get').mockReturnValue(of(mockCoingeckoResponse as any));
+      vi.spyOn(binanceClient, 'getMarketChart').mockResolvedValue(mockMarketChart);
       const setSpy = vi.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
 
       const result = await service.getHistory('bitcoin', '7');
 
-      expect(httpService.get).toHaveBeenCalledWith('/coins/bitcoin/market_chart', expect.objectContaining({
-        params: { vs_currency: 'usd', days: '7' }
-      }));
-
+      expect(binanceClient.getMarketChart).toHaveBeenCalledWith('bitcoin', '7');
       expect(result).toEqual({
         id: 'bitcoin',
         days: '7',
@@ -120,9 +144,6 @@ describe('CryptoService', () => {
     it('fetches basic info and history for multiple coins, re-indexing from base 0', async () => {
       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
 
-      // We mock the getTopCoins method just to get the coin basic info for symbol/name
-      // To test the logic independently, we mock httpService.get directly.
-      // But it's easier to mock the sub-methods since we use them.
       vi.spyOn(service, 'getTopCoins').mockResolvedValue([
         { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', currentPrice: 100, marketCap: 100, marketCapRank: 1, totalVolume: 100, priceChangePercentage24h: 1, image: '' },
         { id: 'ethereum', symbol: 'eth', name: 'Ethereum', currentPrice: 50, marketCap: 50, marketCapRank: 2, totalVolume: 50, priceChangePercentage24h: 1, image: '' }
@@ -156,7 +177,7 @@ describe('CryptoService', () => {
       expect(result.days).toBe('7');
       expect(result.coins).toHaveLength(2);
 
-      const btcResult = result.coins.find(c => c.id === 'bitcoin')!;
+      const btcResult = result.coins.find(coin => coin.id === 'bitcoin')!;
       expect(btcResult.symbol).toBe('btc');
       expect(btcResult.name).toBe('Bitcoin');
       expect(btcResult.series).toEqual([
@@ -165,7 +186,7 @@ describe('CryptoService', () => {
         { timestampMs: 3000, indexedValue: -10 },
       ]);
 
-      const ethResult = result.coins.find(c => c.id === 'ethereum')!;
+      const ethResult = result.coins.find(coin => coin.id === 'ethereum')!;
       expect(ethResult.symbol).toBe('eth');
       expect(ethResult.series).toEqual([
         { timestampMs: 1000, indexedValue: 0 },

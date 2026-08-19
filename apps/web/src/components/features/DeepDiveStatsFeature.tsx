@@ -14,7 +14,7 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
   const localCoinId = selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" || "" : '');
 
   const { data: fetchedCoin, isLoading } = useCoinSummary(selectedAssetId ? localCoinId : null);
-  const selectedCoin = fetchedCoin || coins.find(c => c.id === localCoinId);
+  const selectedCoin = fetchedCoin || coins.find(coin => coin.id === localCoinId);
 
   if (!coins || coins.length === 0) return null;
   if (isLoading && !selectedCoin) {
@@ -46,24 +46,25 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">Market Cap</h4>
-            <p className="text-lg font-semibold text-slate-200">${(selectedCoin.marketCap / 1e9).toFixed(2)} Billion</p>
-            <p className="text-xs text-slate-500 mt-1">Global Rank: #{selectedCoin.marketCapRank}</p>
+            <h4 className="text-sm font-medium text-slate-400 mb-1">Conversion (BRL)</h4>
+            <p className="text-lg font-semibold text-slate-200">
+              R$ {(selectedCoin.currentPrice * 5.4).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Est. at 1 USD = 5.4 BRL</p>
           </div>
 
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
             <h4 className="text-sm font-medium text-slate-400 mb-1">24h Trading Volume</h4>
-            <p className="text-lg font-semibold text-slate-200">${(selectedCoin.totalVolume / 1e9).toFixed(2)} Billion</p>
+            <p className="text-lg font-semibold text-slate-200">${(selectedCoin.totalVolume / 1e6).toFixed(2)} Million</p>
             <p className="text-xs text-slate-500 mt-1">Liquidity indicator</p>
           </div>
 
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">Market Share</h4>
-            {/* Simulação simples da dominancia sobre o topo 5 do nosso cache atual */}
+            <h4 className="text-sm font-medium text-slate-400 mb-1">Price Delta (24h)</h4>
             <p className="text-lg font-semibold text-slate-200">
-              {((selectedCoin.marketCap / coins.reduce((acc, c) => acc + c.marketCap, 0)) * 100).toFixed(1)}%
+              ${Math.abs(selectedCoin.currentPrice * (selectedCoin.priceChangePercentage24h / 100)).toFixed(4)}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Of Top 5 Portfolio</p>
+            <p className="text-xs text-slate-500 mt-1">Nominal value change</p>
           </div>
 
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">

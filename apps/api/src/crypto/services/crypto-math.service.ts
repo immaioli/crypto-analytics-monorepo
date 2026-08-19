@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { CoinSummary, HistoryPoint, OhlcCandle, ComparedCoinSeries } from '@dashboard-cripto/shared-types';
+import { CoinSummary, HistoryPoint, ComparedCoinSeries, OhlcCandle } from '@dashboard-cripto/shared-types';
 
 @Injectable()
 export class CryptoMathService {
 
   normalizeTopCoins(data: any[]): CoinSummary[] {
-    return data.map((coin: any) => ({
+    return data.map((coin: any) => this.normalizeCoinSummary(coin));
+  }
+
+  normalizeCoinSummary(coin: any): CoinSummary {
+    return {
       id: coin.id,
       symbol: coin.symbol,
       name: coin.name,
@@ -15,7 +19,11 @@ export class CryptoMathService {
       marketCapRank: coin.market_cap_rank,
       totalVolume: coin.total_volume,
       priceChangePercentage24h: coin.price_change_percentage_24h,
-    }));
+    };
+  }
+
+  normalizeOhlc(data: any[]): OhlcCandle[] {
+    return data as OhlcCandle[];
   }
 
   normalizeHistory(prices: [number, number][], volumes: [number, number][]): HistoryPoint[] {

@@ -1,10 +1,14 @@
-import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { CoinGeckoClientService } from './services/coingecko-client.service.js';
+
+import { BinanceClientService } from './services/binance-client.service.js';
+import { CoinCapClientService } from './services/coincap-client.service.js';
 import { CryptoMathService } from './services/crypto-math.service.js';
+import { CryptoDictionaryService } from './services/crypto-dictionary.service.js';
+import { ICryptoProvider } from './interfaces/crypto-provider.interface.js';
+
 import {
   CoinSummary,
   OhlcCandle,
@@ -17,29 +21,56 @@ import {
 @Injectable()
 export class CryptoService {
   private readonly logger = new Logger(CryptoService.name);
+  private providers: ICryptoProvider[];
 
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    private readonly apiClient: CoinGeckoClientService,
+    private readonly binanceClient: BinanceClientService,
+    private readonly coincapClient: CoinCapClientService,
+    private readonly dictionary: CryptoDictionaryService,
     private readonly mathService: CryptoMathService,
-  ) {}
+  ) {
+    // Strategy Pattern: Priority ordered
+    this.providers = [this.binanceClient, this.coincapClient];
+  }
 
   /**
-   * CRON JOB: WORKER DE ALTA PERFORMANCE
-   * Roda a cada minuto em background, alimentando o Redis.
-   * O usuário nunca espera a latência da API externa para acessar o "Top 5".
+   * Multiple Circuit Breaker for Crypto Providers
    */
+  private async tryWithFallback<T>(
+    operation: (provider: ICryptoProvider) => Promise<T>,
+    operationName: string
+  ): Promise<T> {
+    let lastError: any = null;
+
+    for (const provider of this.providers) {
+      const providerName = provider.constructor.name;
+      try {
+        const result = await operation(provider);
+        return result;
+      } catch (error: any) {
+        lastError = error;
+        this.logger.warn(`Provider ${providerName} failed during ${operationName}. Reason: ${error.message}. Shifting to next...`);
+      }
+    }
+
+    this.logger.error(`All providers failed for ${operationName}.`);
+    throw new HttpException(
+      { statusCode: HttpStatus.BAD_GATEWAY, message: 'All crypto providers failed', error: 'Bad Gateway' },
+      HttpStatus.BAD_GATEWAY
+    );
+  }
+
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCronTopCoinsUpdate() {
     this.logger.debug('Background Worker: Pre-fetching Top Coins...');
     try {
-      const data = await this.apiClient.getMarkets(5);
-      const normalizedData = this.mathService.normalizeTopCoins(data);
-      // Salva no cache por 65 segundos (um pouco a mais que o cron, para evitar gap)
+      const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(5), 'getMarkets');
+      const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
       await this.cacheManager.set('coins_top_10', normalizedData, 65000);
       this.logger.debug('Background Worker: Top Coins cache updated successfully.');
-    } catch (error) {
-      this.logger.error('Background Worker Failed to update cache. Circuit Breaker will use stale data if available.', error);
+    } catch (cronError) {
+      this.logger.error('Background Worker Failed to update cache. Circuit Breaker will use stale data if available.', cronError);
     }
   }
 
@@ -47,21 +78,15 @@ export class CryptoService {
     const cacheKey = 'coins_top_10';
     const cachedData = await this.cacheManager.get<CoinSummary[]>(cacheKey);
 
-    // Se o worker fez o trabalho dele, respondemos em milissegundos
     if (cachedData) {
       return cachedData;
     }
 
-    // Se é a primeira execução (worker não rodou ainda) ou cache expirou
     this.logger.log('Cache miss for Top Coins. Fetching synchronously...');
-    try {
-      const data = await this.apiClient.getMarkets(5);
-      const normalizedData = this.mathService.normalizeTopCoins(data);
-      await this.cacheManager.set(cacheKey, normalizedData, 65000);
-      return normalizedData;
-    } catch (error: any) {
-      this.handleExternalError(error);
-    }
+    const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(5), 'getMarkets');
+    const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
+    await this.cacheManager.set(cacheKey, normalizedData, 65000);
+    return normalizedData;
   }
 
   async getCoinSummary(id: string): Promise<CoinSummary> {
@@ -70,24 +95,27 @@ export class CryptoService {
     if (cachedData) return cachedData;
 
     try {
-      const data = await this.apiClient.getCoinData(id);
-
-      const summary: CoinSummary = {
-        id: data.id,
-        symbol: data.symbol,
-        name: data.name,
-        image: data.image?.small || data.image?.thumb || '',
-        currentPrice: data.market_data?.current_price?.usd || 0,
-        marketCap: data.market_data?.market_cap?.usd || 0,
-        marketCapRank: data.market_cap_rank || 0,
-        totalVolume: data.market_data?.total_volume?.usd || 0,
-        priceChangePercentage24h: data.market_data?.price_change_percentage_24h || 0,
-      };
-
+      const rawCoinData = await this.tryWithFallback(provider => provider.getCoinData(id), 'getCoinData');
+      const summary = this.mathService.normalizeCoinSummary(rawCoinData);
       await this.cacheManager.set(cacheKey, summary, 60000);
       return summary;
-    } catch (error: any) {
-      this.handleExternalError(error);
+    } catch (error) {
+      this.logger.warn(`Could not fetch live summary for ${id}, using static dictionary fallback.`);
+
+      const safeId = id.toLowerCase();
+      const staticData = this.dictionary.getStaticData(safeId);
+
+      return {
+        id: safeId,
+        symbol: staticData?.symbol || safeId,
+        name: staticData?.name || safeId,
+        image: staticData?.image || '',
+        currentPrice: 0,
+        marketCap: 0,
+        marketCapRank: 0,
+        totalVolume: 0,
+        priceChangePercentage24h: 0
+      };
     }
   }
 
@@ -96,13 +124,10 @@ export class CryptoService {
     const cachedData = await this.cacheManager.get<OhlcCandle[]>(cacheKey);
     if (cachedData) return cachedData;
 
-    try {
-      const data = await this.apiClient.getOhlc(id, days);
-      await this.cacheManager.set(cacheKey, data, 60000);
-      return data;
-    } catch (error: any) {
-      this.handleExternalError(error);
-    }
+    const rawOhlcData = await this.tryWithFallback(provider => provider.getOhlc(id, days), 'getOhlc');
+    const ohlcCandles = this.mathService.normalizeOhlc(rawOhlcData);
+    await this.cacheManager.set(cacheKey, ohlcCandles, 60000);
+    return ohlcCandles;
   }
 
   async getHistory(id: string, days: SupportedPeriod): Promise<CoinHistory> {
@@ -110,16 +135,12 @@ export class CryptoService {
     const cachedData = await this.cacheManager.get<CoinHistory>(cacheKey);
     if (cachedData) return cachedData;
 
-    try {
-      const response = await this.apiClient.getMarketChart(id, days);
-      const historyPoints = this.mathService.normalizeHistory(response.prices, response.total_volumes);
+    const chartResponse = await this.tryWithFallback(provider => provider.getMarketChart(id, days), 'getMarketChart');
+    const historyPoints = this.mathService.normalizeHistory(chartResponse.prices, chartResponse.total_volumes);
 
-      const data: CoinHistory = { id, days, prices: historyPoints };
-      await this.cacheManager.set(cacheKey, data, 60000);
-      return data;
-    } catch (error: any) {
-      this.handleExternalError(error);
-    }
+    const coinHistory: CoinHistory = { id, days, prices: historyPoints };
+    await this.cacheManager.set(cacheKey, coinHistory, 60000);
+    return coinHistory;
   }
 
   async compareCoins(ids: string[], days: SupportedPeriod): Promise<CompareResponse> {
@@ -130,35 +151,45 @@ export class CryptoService {
     if (cachedData) return cachedData;
 
     const topCoins = await this.getTopCoins();
-    const coinsData: ComparedCoinSeries[] = [];
+    const comparedCoinsData: ComparedCoinSeries[] = [];
 
-    const histories = await Promise.all(
-      sortedIds.map(id => this.getHistory(id, days).catch(() => null))
+    const coinHistories = await Promise.all(
+      sortedIds.map(coinId => this.getHistory(coinId, days).catch(() => null))
     );
 
-    for (let i = 0; i < sortedIds.length; i++) {
-      const id = sortedIds[i];
-      if (!id) continue;
+    for (let index = 0; index < sortedIds.length; index++) {
+      const coinId = sortedIds[index];
+      if (!coinId) continue;
 
-      const history = histories[i];
-      if (!history || history.prices.length === 0) continue;
+      const coinHistory = coinHistories[index];
 
-      const basicInfo = topCoins.find(c => c.id === id);
-      const seriesObj = this.mathService.buildIndexedSeries(history.prices, basicInfo, id);
+      let coinBasicInfo = topCoins.find(coin => coin.id === coinId);
+      if (!coinBasicInfo) {
+        try {
+          coinBasicInfo = await this.getCoinSummary(coinId);
+        } catch (_unusedError) {
+          // Silently ignore — fallback ID will be used
+        }
+      }
 
-      if (seriesObj) coinsData.push(seriesObj);
+      if (!coinHistory || coinHistory.prices.length === 0) {
+        // Even if history failed, we should return the coin metadata so the frontend can render the button correctly
+        comparedCoinsData.push({
+          id: coinId,
+          symbol: coinBasicInfo?.symbol || coinId,
+          name: coinBasicInfo?.name || coinId,
+          series: []
+        });
+        continue;
+      }
+
+      const indexedSeries = this.mathService.buildIndexedSeries(coinHistory.prices, coinBasicInfo, coinId);
+
+      if (indexedSeries) comparedCoinsData.push(indexedSeries);
     }
 
-    const data: CompareResponse = { days, coins: coinsData };
-    await this.cacheManager.set(cacheKey, data, 60000);
-    return data;
-  }
-
-  private handleExternalError(error: any): never {
-    const message = error.response?.data?.status?.error_message || 'Failed to fetch from CoinGecko';
-    throw new HttpException(
-      { statusCode: HttpStatus.BAD_GATEWAY, message, error: 'Bad Gateway' },
-      HttpStatus.BAD_GATEWAY
-    );
+    const compareResponse: CompareResponse = { days, coins: comparedCoinsData };
+    await this.cacheManager.set(cacheKey, compareResponse, 60000);
+    return compareResponse;
   }
 }

@@ -7,7 +7,7 @@ import React from 'react';
 
 export const metadata: Metadata = {
   title: 'Crypto Dashboard',
-  description: 'Top 5 cryptocurrency real-time analytics',
+  description: 'Cryptocurrency real-time analytics',
 };
 
 export default function RootLayout({

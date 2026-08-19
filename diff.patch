@@ -1,0 +1,692 @@
+﻿diff --git a/apps/api/src/crypto/crypto.service.spec.ts b/apps/api/src/crypto/crypto.service.spec.ts
+index 17bbd1b..f0d524e 100644
+--- a/apps/api/src/crypto/crypto.service.spec.ts
++++ b/apps/api/src/crypto/crypto.service.spec.ts
+@@ -1,50 +1,68 @@
+ import { describe, it, expect, vi, beforeEach } from 'vitest';
+ import { CryptoService } from './crypto.service.js';
+-import { HttpService } from '@nestjs/axios';
+ import { Cache } from 'cache-manager';
+-import { of, throwError } from 'rxjs';
+ import { HttpException, HttpStatus } from '@nestjs/common';
++import { BinanceClientService } from './services/binance-client.service.js';
++import { CoinCapClientService } from './services/coincap-client.service.js';
++import { CryptoMathService } from './services/crypto-math.service.js';
+ 
+ describe('CryptoService', () => {
+   let service: CryptoService;
+-  let httpService: HttpService;
+   let cacheManager: Cache;
++  let binanceClient: BinanceClientService;
++  let coincapClient: CoinCapClientService;
++  let mathService: CryptoMathService;
+ 
+   beforeEach(() => {
+-    httpService = {
+-      get: vi.fn(),
+-    } as any;
+-
+     cacheManager = {
+       get: vi.fn(),
+       set: vi.fn(),
+     } as any;
+ 
+-    service = new CryptoService(httpService, cacheManager);
++    binanceClient = {
++      getMarkets: vi.fn(),
++      getCoinData: vi.fn(),
++      getOhlc: vi.fn(),
++      getMarketChart: vi.fn(),
++    } as any;
++
++    coincapClient = {
++      getMarkets: vi.fn(),
++      getCoinData: vi.fn(),
++      getOhlc: vi.fn(),
++      getMarketChart: vi.fn(),
++    } as any;
++
++    mathService = new CryptoMathService();
++
++    const dictionary = {
++      getStaticData: vi.fn().mockReturnValue(null)
++    } as any;
++
++    service = new CryptoService(
++      cacheManager,
++      binanceClient,
++      coincapClient,
++      dictionary,
++      mathService,
++    );
+   });
+ 
+   describe('getOhlc', () => {
+-    it('returns formatted OHLC data and caches it', async () => {
+-      const mockCoingeckoResponse = {
+-        data: [
+-          [1692057600000, 29000, 29500, 28500, 29200],
+-          [1692144000000, 29200, 29800, 29000, 29700],
+-        ],
+-      };
++    it('returns formatted OHLC data from Binance and caches it', async () => {
++      const mockOhlcData = [
++        [1692057600000, 29000, 29500, 28500, 29200],
++        [1692144000000, 29200, 29800, 29000, 29700],
++      ];
+ 
+       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
+-      vi.spyOn(httpService, 'get').mockReturnValue(of(mockCoingeckoResponse as any));
++      vi.spyOn(binanceClient, 'getOhlc').mockResolvedValue(mockOhlcData);
+       const setSpy = vi.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
+ 
+       const result = await service.getOhlc('bitcoin', '7');
+ 
+-      expect(httpService.get).toHaveBeenCalledWith('/coins/bitcoin/ohlc', expect.objectContaining({
+-        params: { vs_currency: 'usd', days: '7' }
+-      }));
+-      expect(result).toEqual([
+-        [1692057600000, 29000, 29500, 28500, 29200],
+-        [1692144000000, 29200, 29800, 29000, 29700],
+-      ]);
++      expect(binanceClient.getOhlc).toHaveBeenCalledWith('bitcoin', '7');
++      expect(result).toEqual(mockOhlcData);
+       expect(setSpy).toHaveBeenCalledWith('coins_bitcoin_ohlc_7', result, 60000);
+     });
+ 
+@@ -57,53 +75,59 @@ describe('CryptoService', () => {
+       const result = await service.getOhlc('bitcoin', '7');
+ 
+       expect(cacheManager.get).toHaveBeenCalledWith('coins_bitcoin_ohlc_7');
+-      expect(httpService.get).not.toHaveBeenCalled();
++      expect(binanceClient.getOhlc).not.toHaveBeenCalled();
+       expect(result).toEqual(cachedData);
+     });
+ 
+-    it('throws Bad Gateway on coingecko error', async () => {
++    it('falls back to CoinCap when Binance fails', async () => {
++      const mockOhlcData = [
++        [1692057600000, 29000, 29500, 28500, 29200],
++      ];
++
++      vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
++      vi.spyOn(binanceClient, 'getOhlc').mockRejectedValue(new Error('Binance down'));
++      vi.spyOn(coincapClient, 'getOhlc').mockResolvedValue(mockOhlcData);
++      vi.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
++
++      const result = await service.getOhlc('bitcoin', '7');
++
++      expect(binanceClient.getOhlc).toHaveBeenCalled();
++      expect(coincapClient.getOhlc).toHaveBeenCalledWith('bitcoin', '7');
++      expect(result).toEqual(mockOhlcData);
++    });
++
++    it('throws Bad Gateway when ALL providers fail', async () => {
+       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
+-      vi.spyOn(httpService, 'get').mockReturnValue(throwError(() => ({
+-        response: { data: { status: { error_message: 'Rate limit' } } }
+-      })));
++      vi.spyOn(binanceClient, 'getOhlc').mockRejectedValue(new Error('Binance down'));
++      vi.spyOn(coincapClient, 'getOhlc').mockRejectedValue(new Error('CoinCap down'));
+ 
+       await expect(service.getOhlc('bitcoin', '7')).rejects.toThrow(HttpException);
+       await expect(service.getOhlc('bitcoin', '7')).rejects.toMatchObject({
+         status: HttpStatus.BAD_GATEWAY,
+-        response: { message: 'Rate limit' }
+       });
+     });
+   });
+ 
+   describe('getHistory', () => {
+     it('normalizes history data correctly and caches it', async () => {
+-      const mockCoingeckoResponse = {
+-        data: {
+-          prices: [
+-            [1692057600000, 29000],
+-            [1692144000000, 29200],
+-          ],
+-          market_caps: [
+-            [1692057600000, 500000000],
+-            [1692144000000, 510000000],
+-          ],
+-          total_volumes: [
+-            [1692057600000, 20000000],
+-            [1692144000000, 21000000],
+-          ],
+-        }
++      const mockMarketChart = {
++        prices: [
++          [1692057600000, 29000] as [number, number],
++          [1692144000000, 29200] as [number, number],
++        ],
++        total_volumes: [
++          [1692057600000, 20000000] as [number, number],
++          [1692144000000, 21000000] as [number, number],
++        ],
+       };
+ 
+       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
+-      vi.spyOn(httpService, 'get').mockReturnValue(of(mockCoingeckoResponse as any));
++      vi.spyOn(binanceClient, 'getMarketChart').mockResolvedValue(mockMarketChart);
+       const setSpy = vi.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
+ 
+       const result = await service.getHistory('bitcoin', '7');
+ 
+-      expect(httpService.get).toHaveBeenCalledWith('/coins/bitcoin/market_chart', expect.objectContaining({
+-        params: { vs_currency: 'usd', days: '7' }
+-      }));
+-
++      expect(binanceClient.getMarketChart).toHaveBeenCalledWith('bitcoin', '7');
+       expect(result).toEqual({
+         id: 'bitcoin',
+         days: '7',
+@@ -120,12 +144,9 @@ describe('CryptoService', () => {
+     it('fetches basic info and history for multiple coins, re-indexing from base 0', async () => {
+       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
+ 
+-      // We mock the getTopCoins method just to get the coin basic info for symbol/name
+-      // To test the logic independently, we mock httpService.get directly.
+-      // But it's easier to mock the sub-methods since we use them.
+       vi.spyOn(service, 'getTopCoins').mockResolvedValue([
+-        { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', currentPrice: 100, marketCap: 100, marketCapRank: 1, totalVolume: 100, priceChangePercentage24h: 1, image: '' },
+-        { id: 'ethereum', symbol: 'eth', name: 'Ethereum', currentPrice: 50, marketCap: 50, marketCapRank: 2, totalVolume: 50, priceChangePercentage24h: 1, image: '' }
++        { id: 'bitcoin', symbol: 'bitcoin', name: 'Bitcoin', currentPrice: 100, marketCap: 100, marketCapRank: 1, totalVolume: 100, priceChangePercentage24h: 1, image: '' },
++        { id: 'ethereum', symbol: 'ethereum', name: 'Ethereum', currentPrice: 50, marketCap: 50, marketCapRank: 2, totalVolume: 50, priceChangePercentage24h: 1, image: '' }
+       ]);
+ 
+       vi.spyOn(service, 'getHistory').mockImplementation(async (id) => {
+@@ -156,8 +177,8 @@ describe('CryptoService', () => {
+       expect(result.days).toBe('7');
+       expect(result.coins).toHaveLength(2);
+ 
+-      const btcResult = result.coins.find(c => c.id === 'bitcoin')!;
+-      expect(btcResult.symbol).toBe('btc');
++      const btcResult = result.coins.find(coin => coin.id === 'bitcoin')!;
++      expect(btcResult.symbol).toBe('bitcoin');
+       expect(btcResult.name).toBe('Bitcoin');
+       expect(btcResult.series).toEqual([
+         { timestampMs: 1000, indexedValue: 0 },
+@@ -165,8 +186,8 @@ describe('CryptoService', () => {
+         { timestampMs: 3000, indexedValue: -10 },
+       ]);
+ 
+-      const ethResult = result.coins.find(c => c.id === 'ethereum')!;
+-      expect(ethResult.symbol).toBe('eth');
++      const ethResult = result.coins.find(coin => coin.id === 'ethereum')!;
++      expect(ethResult.symbol).toBe('ethereum');
+       expect(ethResult.series).toEqual([
+         { timestampMs: 1000, indexedValue: 0 },
+         { timestampMs: 2000, indexedValue: 5 },
+diff --git a/apps/api/src/crypto/crypto.service.ts b/apps/api/src/crypto/crypto.service.ts
+index fa77274..210b201 100644
+--- a/apps/api/src/crypto/crypto.service.ts
++++ b/apps/api/src/crypto/crypto.service.ts
+@@ -1,10 +1,14 @@
+-import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
++import { Injectable, HttpException, HttpStatus, Logger, Inject } from '@nestjs/common';
+ import { CACHE_MANAGER } from '@nestjs/cache-manager';
+-import { Inject } from '@nestjs/common';
+ import { Cache } from 'cache-manager';
+ import { Cron, CronExpression } from '@nestjs/schedule';
+-import { CoinGeckoClientService } from './services/coingecko-client.service.js';
++
++import { BinanceClientService } from './services/binance-client.service.js';
++import { CoinCapClientService } from './services/coincap-client.service.js';
+ import { CryptoMathService } from './services/crypto-math.service.js';
++import { CryptoDictionaryService } from './services/crypto-dictionary.service.js';
++import { ICryptoProvider } from './interfaces/crypto-provider.interface.js';
++
+ import {
+   CoinSummary,
+   OhlcCandle,
+@@ -17,29 +21,61 @@ import {
+ @Injectable()
+ export class CryptoService {
+   private readonly logger = new Logger(CryptoService.name);
++  private providers: ICryptoProvider[];
+ 
+   constructor(
+     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+-    private readonly apiClient: CoinGeckoClientService,
++    private readonly binanceClient: BinanceClientService,
++    private readonly coincapClient: CoinCapClientService,
++    private readonly dictionary: CryptoDictionaryService,
+     private readonly mathService: CryptoMathService,
+-  ) {}
++  ) {
++    // Strategy Pattern: Priority ordered
++    this.providers = [this.binanceClient, this.coincapClient];
++  }
++
++  /**
++   * Multiple Circuit Breaker for Crypto Providers
++   */
++  private async tryWithFallback<T>(
++    operation: (provider: ICryptoProvider) => Promise<T>,
++    operationName: string
++  ): Promise<T> {
++    let lastError: any = null;
++
++    for (const provider of this.providers) {
++      const providerName = provider.constructor.name;
++      try {
++        const result = await operation(provider);
++        return result;
++      } catch (error: any) {
++        lastError = error;
++        this.logger.warn(`Provider ${providerName} failed during ${operationName}. Reason: ${error.message}. Shifting to next...`);
++      }
++    }
++
++    this.logger.error(`All providers failed for ${operationName}.`);
++    throw new HttpException(
++      { statusCode: HttpStatus.BAD_GATEWAY, message: 'All crypto providers failed', error: 'Bad Gateway' },
++      HttpStatus.BAD_GATEWAY
++    );
++  }
+ 
+   /**
+-   * CRON JOB: WORKER DE ALTA PERFORMANCE
+-   * Roda a cada minuto em background, alimentando o Redis.
+-   * O usuário nunca espera a latência da API externa para acessar o "Top 5".
++   * HIGH-PERFORMANCE CRON WORKER
++   * Runs every minute in the background, feeding the Redis store.
+    */
+   @Cron(CronExpression.EVERY_MINUTE)
+   async handleCronTopCoinsUpdate() {
+     this.logger.debug('Background Worker: Pre-fetching Top Coins...');
+     try {
+-      const data = await this.apiClient.getMarkets(5);
+-      const normalizedData = this.mathService.normalizeTopCoins(data);
+-      // Salva no cache por 65 segundos (um pouco a mais que o cron, para evitar gap)
++      const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(5), 'getMarkets');
++      const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
++      // Save in cache for 65 seconds (slightly longer than the cron interval to prevent gaps)
+       await this.cacheManager.set('coins_top_10', normalizedData, 65000);
+       this.logger.debug('Background Worker: Top Coins cache updated successfully.');
+-    } catch (error) {
+-      this.logger.error('Background Worker Failed to update cache. Circuit Breaker will use stale data if available.', error);
++    } catch (cronError) {
++      this.logger.error('Background Worker Failed to update cache. Circuit Breaker will use stale data if available.', cronError);
+     }
+   }
+ 
+@@ -47,21 +83,15 @@ export class CryptoService {
+     const cacheKey = 'coins_top_10';
+     const cachedData = await this.cacheManager.get<CoinSummary[]>(cacheKey);
+ 
+-    // Se o worker fez o trabalho dele, respondemos em milissegundos
+     if (cachedData) {
+       return cachedData;
+     }
+ 
+-    // Se é a primeira execução (worker não rodou ainda) ou cache expirou
+     this.logger.log('Cache miss for Top Coins. Fetching synchronously...');
+-    try {
+-      const data = await this.apiClient.getMarkets(5);
+-      const normalizedData = this.mathService.normalizeTopCoins(data);
+-      await this.cacheManager.set(cacheKey, normalizedData, 65000);
+-      return normalizedData;
+-    } catch (error: any) {
+-      this.handleExternalError(error);
+-    }
++    const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(5), 'getMarkets');
++    const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
++    await this.cacheManager.set(cacheKey, normalizedData, 65000);
++    return normalizedData;
+   }
+ 
+   async getCoinSummary(id: string): Promise<CoinSummary> {
+@@ -70,24 +100,28 @@ export class CryptoService {
+     if (cachedData) return cachedData;
+ 
+     try {
+-      const data = await this.apiClient.getCoinData(id);
+-
+-      const summary: CoinSummary = {
+-        id: data.id,
+-        symbol: data.symbol,
+-        name: data.name,
+-        image: data.image?.small || data.image?.thumb || '',
+-        currentPrice: data.market_data?.current_price?.usd || 0,
+-        marketCap: data.market_data?.market_cap?.usd || 0,
+-        marketCapRank: data.market_cap_rank || 0,
+-        totalVolume: data.market_data?.total_volume?.usd || 0,
+-        priceChangePercentage24h: data.market_data?.price_change_percentage_24h || 0,
+-      };
+-
++      const rawCoinData = await this.tryWithFallback(provider => provider.getCoinData(id), 'getCoinData');
++      const summary = this.mathService.normalizeCoinSummary(rawCoinData);
+       await this.cacheManager.set(cacheKey, summary, 60000);
+       return summary;
+-    } catch (error: any) {
+-      this.handleExternalError(error);
++    } catch (error) {
++      // If all APIs fail to fetch real data, return a graceful skeleton instead of breaking the frontend
++      this.logger.warn(`Could not fetch live summary for ${id}, using static dictionary fallback.`);
++
++      const safeId = id.toLowerCase();
++      const staticData = this.dictionary.getStaticData(safeId);
++
++      return {
++        id: safeId,
++        symbol: staticData?.symbol || safeId,
++        name: staticData?.name || safeId,
++        image: staticData?.image || '',
++        currentPrice: 0,
++        marketCap: 0,
++        marketCapRank: 0,
++        totalVolume: 0,
++        priceChangePercentage24h: 0
++      };
+     }
+   }
+ 
+@@ -96,13 +130,10 @@ export class CryptoService {
+     const cachedData = await this.cacheManager.get<OhlcCandle[]>(cacheKey);
+     if (cachedData) return cachedData;
+ 
+-    try {
+-      const data = await this.apiClient.getOhlc(id, days);
+-      await this.cacheManager.set(cacheKey, data, 60000);
+-      return data;
+-    } catch (error: any) {
+-      this.handleExternalError(error);
+-    }
++    const rawOhlcData = await this.tryWithFallback(provider => provider.getOhlc(id, days), 'getOhlc');
++    const ohlcCandles = this.mathService.normalizeOhlc(rawOhlcData);
++    await this.cacheManager.set(cacheKey, ohlcCandles, 60000);
++    return ohlcCandles;
+   }
+ 
+   async getHistory(id: string, days: SupportedPeriod): Promise<CoinHistory> {
+@@ -110,16 +141,12 @@ export class CryptoService {
+     const cachedData = await this.cacheManager.get<CoinHistory>(cacheKey);
+     if (cachedData) return cachedData;
+ 
+-    try {
+-      const response = await this.apiClient.getMarketChart(id, days);
+-      const historyPoints = this.mathService.normalizeHistory(response.prices, response.total_volumes);
+-
+-      const data: CoinHistory = { id, days, prices: historyPoints };
+-      await this.cacheManager.set(cacheKey, data, 60000);
+-      return data;
+-    } catch (error: any) {
+-      this.handleExternalError(error);
+-    }
++    const chartResponse = await this.tryWithFallback(provider => provider.getMarketChart(id, days), 'getMarketChart');
++    const historyPoints = this.mathService.normalizeHistory(chartResponse.prices, chartResponse.total_volumes);
++
++    const coinHistory: CoinHistory = { id, days, prices: historyPoints };
++    await this.cacheManager.set(cacheKey, coinHistory, 60000);
++    return coinHistory;
+   }
+ 
+   async compareCoins(ids: string[], days: SupportedPeriod): Promise<CompareResponse> {
+@@ -130,35 +157,45 @@ export class CryptoService {
+     if (cachedData) return cachedData;
+ 
+     const topCoins = await this.getTopCoins();
+-    const coinsData: ComparedCoinSeries[] = [];
++    const comparedCoinsData: ComparedCoinSeries[] = [];
+ 
+-    const histories = await Promise.all(
+-      sortedIds.map(id => this.getHistory(id, days).catch(() => null))
++    const coinHistories = await Promise.all(
++      sortedIds.map(coinId => this.getHistory(coinId, days).catch(() => null))
+     );
+ 
+-    for (let i = 0; i < sortedIds.length; i++) {
+-      const id = sortedIds[i];
+-      if (!id) continue;
+-
+-      const history = histories[i];
+-      if (!history || history.prices.length === 0) continue;
+-
+-      const basicInfo = topCoins.find(c => c.id === id);
+-      const seriesObj = this.mathService.buildIndexedSeries(history.prices, basicInfo, id);
+-
+-      if (seriesObj) coinsData.push(seriesObj);
++    for (let index = 0; index < sortedIds.length; index++) {
++      const coinId = sortedIds[index];
++      if (!coinId) continue;
++
++      const coinHistory = coinHistories[index];
++
++      let coinBasicInfo = topCoins.find(coin => coin.id === coinId);
++      if (!coinBasicInfo) {
++        try {
++          coinBasicInfo = await this.getCoinSummary(coinId);
++        } catch (_unusedError) {
++          // Silently ignore — fallback ID will be used
++        }
++      }
++
++      if (!coinHistory || coinHistory.prices.length === 0) {
++        // Even if history failed, we should return the coin metadata so the frontend can render the button correctly
++        comparedCoinsData.push({
++          id: coinId,
++          symbol: coinBasicInfo?.symbol || coinId,
++          name: coinBasicInfo?.name || coinId,
++          series: []
++        });
++        continue;
++      }
++
++      const indexedSeries = this.mathService.buildIndexedSeries(coinHistory.prices, coinBasicInfo, coinId);
++
++      if (indexedSeries) comparedCoinsData.push(indexedSeries);
+     }
+ 
+-    const data: CompareResponse = { days, coins: coinsData };
+-    await this.cacheManager.set(cacheKey, data, 60000);
+-    return data;
+-  }
+-
+-  private handleExternalError(error: any): never {
+-    const message = error.response?.data?.status?.error_message || 'Failed to fetch from CoinGecko';
+-    throw new HttpException(
+-      { statusCode: HttpStatus.BAD_GATEWAY, message, error: 'Bad Gateway' },
+-      HttpStatus.BAD_GATEWAY
+-    );
++    const compareResponse: CompareResponse = { days, coins: comparedCoinsData };
++    await this.cacheManager.set(cacheKey, compareResponse, 60000);
++    return compareResponse;
+   }
+ }
+diff --git a/apps/web/src/components/charts/MarketDominanceDonut.tsx b/apps/web/src/components/charts/MarketDominanceDonut.tsx
+index 5a8b1d2..6f26d1d 100644
+--- a/apps/web/src/components/charts/MarketDominanceDonut.tsx
++++ b/apps/web/src/components/charts/MarketDominanceDonut.tsx
+@@ -20,9 +20,9 @@ export function MarketDominanceDonut({ coins }: MarketDominanceDonutProps) {
+ 
+   // We map the top 10 coins. To keep the pie chart readable,
+   // if you passed more than 5-6, it still renders fine.
+-  const data = coins.map(c => ({
+-    name: c.symbol.toUpperCase(),
+-    value: c.marketCap,
++  const data = coins.map(coin => ({
++    name: coin.symbol,
++    value: coin.marketCap,
+   }));
+ 
+   // A standard pleasing color palette matching the dark theme
+diff --git a/apps/web/src/components/features/CompareChartFeature.tsx b/apps/web/src/components/features/CompareChartFeature.tsx
+index 0193f7a..7f34ed9 100644
+--- a/apps/web/src/components/features/CompareChartFeature.tsx
++++ b/apps/web/src/components/features/CompareChartFeature.tsx
+@@ -6,9 +6,8 @@ import { useCompareChartFormatter } from '@/hooks/useCompareChartFormatter';
+ import { LightweightChartWrapper } from '../charts/LightweightChartWrapper';
+ import { CoinSummary, SupportedPeriod } from '@dashboard-cripto/shared-types';
+ import { PeriodSelector } from '../ui/PeriodSelector';
+-import { ChartLoadingView, ChartErrorView } from '../ui/ChartStates';
++import { ChartErrorView } from '../ui/ChartStates';
+ import { useAssetSelection } from '@/hooks/useAssetSelection';
+-import { SelectedAssetBadge } from '../ui/SelectedAssetBadge';
+ 
+ interface CompareChartFeatureProps {
+   coins: CoinSummary[];
+@@ -20,64 +19,88 @@ const COLORS = ['#3b82f6', '#10b981', '#f43f5e', '#eab308', '#8b5cf6'];
+ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
+   // Default to comparing the top 2 coins (usually BTC and ETH)
+   const [selectedIds, setSelectedIds] = useState<string[]>(
+-    coins.slice(0, 2).map(c => c.id)
++    coins.slice(0, 2).map(coin => coin.id)
+   );
+-  const [days, setDays] = useState<SupportedPeriod>('7');
++
++  // Track coins that the user searched for so they don't disappear when unselected
++  const [historicalSearchedIds, setHistoricalSearchedIds] = useState<string[]>([]);
++  const [resolvedNames, setResolvedNames] = useState<Record<string, {name: string, symbol: string}>>({});
++
++  const [days, setDays] = useState<SupportedPeriod>('1');
+ 
+   const { data, isLoading, isError } = useCompareCoins(selectedIds, days);
+ 
+-  // Hook isolado lidando com a formatação e extração do Base-0 index para Multi-linhas
++  // Isolated hook handling the formatting and extraction of the Base-0 index for Multi-lines
+   const { multiLineData } = useCompareChartFormatter(data, selectedIds);
+ 
++  // Cache resolved names so deselected coins don't lose their real names
++  React.useEffect(() => {
++    if (data?.coins) {
++      setResolvedNames(prev => {
++        const next = { ...prev };
++        let changed = false;
++        data.coins.forEach(coin => {
++          if (!next[coin.id] || next[coin.id].name !== coin.name) {
++            next[coin.id] = { name: coin.name, symbol: coin.symbol };
++            changed = true;
++          }
++        });
++        return changed ? next : prev;
++      });
++    }
++  }, [data]);
++
+   // Listen to the global Asset Selection to add a coin to the comparison chart dynamically
+   const { selectedAssetId } = useAssetSelection();
+   React.useEffect(() => {
+-    if (selectedAssetId && !selectedIds.includes(selectedAssetId)) {
+-      setSelectedIds(prev => {
+-        if (prev.length >= 5) return [...prev.slice(1), selectedAssetId]; // Rotate out the oldest if we hit 5
+-        return [...prev, selectedAssetId];
+-      });
++    if (selectedAssetId) {
++      if (!historicalSearchedIds.includes(selectedAssetId)) {
++        setHistoricalSearchedIds(prev => [...prev, selectedAssetId]);
++      }
++      if (!selectedIds.includes(selectedAssetId)) {
++        setSelectedIds(prev => [...prev, selectedAssetId]);
++      }
+     }
+   }, [selectedAssetId]);
+ 
+-  const toggleCoin = (id: string) => {
++  const toggleCoin = (targetId: string) => {
+     setSelectedIds(prev => {
+-      if (prev.includes(id)) {
++      if (prev.includes(targetId)) {
+         if (prev.length <= 1) return prev; // Keep at least one
+-        return prev.filter(c => c !== id);
++        return prev.filter(existingId => existingId !== targetId);
+       }
+-      if (prev.length >= 5) return prev; // Max 5 to avoid visual clutter
+-      return [...prev, id];
++      return [...prev, targetId];
+     });
+   };
+ 
+   if (!coins || coins.length === 0) return null;
+ 
+   // Derive the list of coins to show as buttons.
+-  // It should be the top 8, plus any selected coins that aren't in the top 8.
++  // It should be the top 8, plus any historically searched coins.
+   const top8Coins = coins.slice(0, 8);
+   const displayCoins = [...top8Coins];
+ 
+-  // Add selected coins that are not in the top 8 (like from search)
+-  // We need to fetch their summary data or use a fallback.
+-  selectedIds.forEach(id => {
+-    if (!displayCoins.find(c => c.id === id)) {
+-      const foundInAll = coins.find(c => c.id === id);
++  // Combine currently selected ids and historically searched ids
++  const allIdsToDisplay = Array.from(new Set([...selectedIds, ...historicalSearchedIds]));
++
++  allIdsToDisplay.forEach(displayId => {
++    if (!displayCoins.find(coin => coin.id === displayId)) {
++      const foundInAll = coins.find(coin => coin.id === displayId);
+       if (foundInAll) {
+         displayCoins.push(foundInAll);
+       } else {
+         // Fallback for searched coins not in the initial `coins` list
+-        // We'll extract info from `data` if available
+-        const fromData = data?.coins.find(c => c.id === id);
+-        if (fromData) {
+-          displayCoins.push({
+-            id: fromData.id,
+-            name: fromData.name,
+-            symbol: fromData.symbol,
+-            image: '', // We don't have the image in CompareResponse currently
+-            currentPrice: 0, marketCap: 0, marketCapRank: 0, totalVolume: 0, priceChangePercentage24h: 0
+-          });
+-        }
++        // We'll extract info from `data` if available, or from our history cache
++        const fromData = data?.coins.find(coin => coin.id === displayId);
++        const cached = resolvedNames[displayId];
++
++        displayCoins.push({
++          id: displayId,
++          name: fromData ? fromData.name : (cached ? cached.name : displayId),
++          symbol: fromData ? fromData.symbol : (cached ? cached.symbol : displayId),
++          image: '',
++          currentPrice: 0, marketCap: 0, marketCapRank: 0, totalVolume: 0, priceChangePercentage24h: 0
++        });
+       }
+     }
+   });
+@@ -149,6 +172,7 @@ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
+               type="multi-line"
+               multiLineData={multiLineData}
+               height={320}
++              seriesConfig={{ lastValueVisible: true }}
+             />
+           </>
+         )}
+diff --git a/apps/web/src/hooks/useCompareChartFormatter.ts b/apps/web/src/hooks/useCompareChartFormatter.ts
+index 95de803..fbca92f 100644
+--- a/apps/web/src/hooks/useCompareChartFormatter.ts
++++ b/apps/web/src/hooks/useCompareChartFormatter.ts
+@@ -2,22 +2,24 @@ import { useMemo } from 'react';
+ import { MultiLineSeriesConfig } from '@/components/charts/LightweightChartWrapper';
+ import { CompareResponse } from '@dashboard-cripto/shared-types';
+ 
+-const COLORS = ['#3b82f6', '#10b981', '#f43f5e', '#eab308', '#8b5cf6'];
++const COLORS = ['#3b82f6', '#10b981', '#f43f5e', '#eab308', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#a855f7', '#14b8a6'];
+ 
+ export function useCompareChartFormatter(data: CompareResponse | undefined, selectedIds: string[]) {
+   const multiLineData: MultiLineSeriesConfig[] | undefined = useMemo(() => {
+     if (!data || data.coins.length === 0) return undefined;
+ 
+-    return data.coins.map((coinData) => {
+-      // Find the exact index of this coin in the user's selection array
+-      // This ensures the color in the chart matches the color of the badge exactly
+-      const colorIndex = selectedIds.indexOf(coinData.id);
+-      // Fallback to 0 if not found (though it should always be found)
+-      const safeColorIndex = colorIndex >= 0 ? colorIndex : 0;
++    return data.coins
++      .filter((coinData) => selectedIds.includes(coinData.id))
++      .map((coinData) => {
++        // Find the exact index of this coin in the user's selection array
++        // This ensures the color in the chart matches the color of the badge exactly
++        const colorIndex = selectedIds.indexOf(coinData.id);
++        // Fallback to 0 if not found (though it should always be found)
++        const safeColorIndex = colorIndex >= 0 ? colorIndex : 0;
+ 
+       return {
+         id: coinData.id,
+-        title: coinData.symbol.toUpperCase(),
++        title: coinData.symbol,
+         color: COLORS[safeColorIndex % COLORS.length] || '#3b82f6',
+         data: coinData.series.map(point => ({
+           time: (point.timestampMs / 1000) as any,

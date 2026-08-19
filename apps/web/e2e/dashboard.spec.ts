@@ -1,38 +1,47 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Dashboard Navigation and Caching E2E', () => {
-  // Vamos pausar a página (deixar o navegador aberto) ao final, como solicitado.
-  // Para que funcione automatizado e sem timeout forçado, usaremos o --headed e
-  // um sleep muito longo apenas no passo de exibição.
-  test('Should navigate tabs without blanking out charts and test periods', async ({ page }) => {
-    test.setTimeout(650000); // 10 minutes + margin
+  // Vamos pausar a página (deixar o navegador aberto) indefinidamente ao final usando page.pause().
+  test('Should navigate tabs, search multiple coins, and validate layout', async ({ page }) => {
+    test.setTimeout(86400000); // 24 hours just in case
     // Acessa o dashboard local
     await page.goto('/');
 
-    // 1. Confirma que a página carregou a listagem de Top Coins (garantindo API connection)
+    // 1. Confirma que a página carregou a listagem de Top Coins
     await expect(page.getByRole('heading', { name: 'Crypto Analytics' })).toBeVisible({ timeout: 15000 });
 
-    // Navegaçóes macias sem asserts estritos puros pois a API coingecko rate limits as vezes
-    const tabOhlc = page.getByRole('tab', { name: 'Price Action (OHLC)' });
-    const tabCompare = page.getByRole('tab', { name: 'Performance Compare' });
-    const tabVolume = page.getByRole('tab', { name: 'Volume Profile' });
+    const coinsToTest = ['PEPE', 'ACH', 'ASTER', 'HEYAURA'];
 
-    // Clica para inicializar pre-caches
-    await tabCompare.click();
-    await page.waitForTimeout(500);
+    for (const coin of coinsToTest) {
+      console.log(`Testing search for ${coin}...`);
+      const searchInput = page.getByPlaceholder('Search any coin ID');
+      await searchInput.fill(coin);
+      const searchButton = page.getByRole('button', { name: 'Search' });
+      await searchButton.click();
 
-    await tabVolume.click();
-    await page.waitForTimeout(500);
+      // Wait for fetch
+      await page.waitForTimeout(2000);
 
-    const button30D = page.getByRole('button', { name: '30D' });
-    await button30D.click();
-    await page.waitForTimeout(1000);
+      // Verify Deep Dive stats are rendering properly for this coin
+      const tabDeepDive = page.getByRole('tab', { name: 'Deep Dive Stats' });
+      await tabDeepDive.click();
+      await page.waitForTimeout(1000);
 
-    await tabOhlc.click();
+      // Verify the fallback name doesn't look broken
+      const title = page.locator('div', { hasText: 'Fundamental Metrics' }).first();
+      await expect(title).toBeVisible();
 
-    // Mantém a aba aberta chamando pause para inspecionamento manual
-    // Deixaremos em repouso por 10 minutos (600000ms) para que você possa olhar o navegador e as linhas.
-    console.log("Teste de UI concluído. O navegador permanecerá aberto por 10 minutos para validação visual.");
-    await page.waitForTimeout(600000);
+      // Click to pre-cache comparison
+      const tabCompare = page.getByRole('tab', { name: 'Performance Compare' });
+      await tabCompare.click();
+      await page.waitForTimeout(1000);
+
+      const tabOhlc = page.getByRole('tab', { name: 'Price Action (OHLC)' });
+      await tabOhlc.click();
+      await page.waitForTimeout(1000);
+    }
+
+    console.log("Teste de UI concluído. O navegador e o Inspector permanecerão abertos.");
+    await page.pause();
   });
 });

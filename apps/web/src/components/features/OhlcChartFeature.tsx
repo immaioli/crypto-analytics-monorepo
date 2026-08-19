@@ -27,7 +27,7 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
     }
   }, [selectedAssetId]);
 
-  const [days, setDays] = useState<SupportedPeriod>('7');
+  const [days, setDays] = useState<SupportedPeriod>('1');
 
   const { data: ohlcData, isLoading, isError } = useOhlc(localCoinId, days);
 
