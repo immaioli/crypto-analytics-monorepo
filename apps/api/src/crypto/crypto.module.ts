@@ -5,7 +5,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { CryptoController } from './crypto.controller.js';
 import { CryptoService } from './crypto.service.js';
 import { BinanceClientService } from './services/binance-client.service.js';
-import { CoinCapClientService } from './services/coincap-client.service.js';
+import { CoinPaprikaClientService } from './services/coinpaprika-client.service.js';
 import { CryptoDictionaryService } from './services/crypto-dictionary.service.js';
 import { CryptoMathService } from './services/crypto-math.service.js';
 import { BinanceGateway } from './gateways/binance.gateway.js';
@@ -62,7 +62,7 @@ const logger = new Logger('CacheConfig');
   providers: [
     CryptoService,
     BinanceClientService,
-    CoinCapClientService,
+    CoinPaprikaClientService,
     CryptoDictionaryService,
     CryptoMathService,
     BinanceGateway,

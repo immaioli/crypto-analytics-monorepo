@@ -23,13 +23,13 @@
 
 ## 📖 Overview
 
-The **Crypto Analytics Dashboard** is a high-performance web application designed to provide real-time market overviews and detailed side-by-side coin comparisons. Built with a focus on **resilience, speed, and clean architecture**, it aggregates data from multiple top-tier providers (Binance, CoinGecko, CoinCap) to ensure maximum uptime and data accuracy.
+The **Crypto Analytics Dashboard** is a high-performance web application designed to provide real-time market overviews and detailed side-by-side coin comparisons. Built with a focus on **resilience, speed, and clean architecture**, it aggregates data from multiple top-tier providers (Binance, CoinGecko, CoinPaprika) to ensure maximum uptime and data accuracy.
 
 ## ✨ Key Features
 
 - **📊 Market Overview:** View the top 7 highest volume coins and the top 7 gainers in real-time.
 - **⚖️ Side-by-Side Comparison:** Compare up to 5 cryptocurrencies simultaneously with normalized data.
-- **🛡️ Enterprise Resilience:** Implements the **Circuit Breaker** and **Strategy** patterns. If the primary data provider (Binance) fails or rate-limits, the system gracefully falls back to secondary providers (CoinGecko/CoinCap) without dropping the user request.
+- **🛡️ Enterprise Resilience:** Implements the **Circuit Breaker** and **Strategy** patterns. If the primary data provider (Binance) fails or rate-limits, the system gracefully falls back to secondary providers (CoinGecko/CoinPaprika) without dropping the user request.
 - **⚡ Graceful Degradation Caching:** Uses an intelligent caching layer. If the distributed Redis cluster is unavailable (`ECONNREFUSED`), the system automatically falls back to an in-memory cache, preventing boot crashes.
 - **🤖 Automated E2E Testing:** Integrated Playwright scripts for automated visual UI inspection and data verification.
 

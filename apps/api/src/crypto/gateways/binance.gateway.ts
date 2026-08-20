@@ -64,7 +64,7 @@ export class BinanceGateway implements OnGatewayConnection, OnGatewayDisconnect 
   private connectToBinance(streamId: string, originalSymbol: string) {
     // Note: We create a dedicated stream per symbol for simplicity.
     // In heavy prod, multiplex over a single Binance WS connection.
-    const wsUrl = `wss://stream.binance.com:9443/ws/${streamId}@kline_1m`;
+    const wsUrl = `wss://data-stream.binance.vision:9443/ws/${streamId}@kline_1m`;
     this.logger.log(`Opening Binance stream: ${wsUrl}`);
 
     const ws = new WebSocket(wsUrl);

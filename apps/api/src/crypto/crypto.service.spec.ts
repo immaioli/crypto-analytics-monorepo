@@ -3,14 +3,14 @@ import { CryptoService } from './crypto.service.js';
 import { Cache } from 'cache-manager';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { BinanceClientService } from './services/binance-client.service.js';
-import { CoinCapClientService } from './services/coincap-client.service.js';
+import { CoinPaprikaClientService } from './services/coinpaprika-client.service.js';
 import { CryptoMathService } from './services/crypto-math.service.js';
 
 describe('CryptoService', () => {
   let service: CryptoService;
   let cacheManager: Cache;
   let binanceClient: BinanceClientService;
-  let coincapClient: CoinCapClientService;
+  let coinpaprikaClient: CoinPaprikaClientService;
   let mathService: CryptoMathService;
 
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe('CryptoService', () => {
       getMarketChart: vi.fn(),
     } as any;
 
-    coincapClient = {
+    coinpaprikaClient = {
       getMarkets: vi.fn(),
       getCoinData: vi.fn(),
       getOhlc: vi.fn(),
@@ -42,7 +42,7 @@ describe('CryptoService', () => {
     service = new CryptoService(
       cacheManager,
       binanceClient,
-      coincapClient,
+      coinpaprikaClient,
       dictionary,
       mathService,
     );
@@ -79,27 +79,27 @@ describe('CryptoService', () => {
       expect(result).toEqual(cachedData);
     });
 
-    it('falls back to CoinCap when Binance fails', async () => {
+    it('falls back to CoinPaprika when Binance fails', async () => {
       const mockOhlcData = [
         [1692057600000, 29000, 29500, 28500, 29200],
       ];
 
       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
       vi.spyOn(binanceClient, 'getOhlc').mockRejectedValue(new Error('Binance down'));
-      vi.spyOn(coincapClient, 'getOhlc').mockResolvedValue(mockOhlcData);
+      vi.spyOn(coinpaprikaClient, 'getOhlc').mockResolvedValue(mockOhlcData);
       vi.spyOn(cacheManager, 'set').mockResolvedValue(undefined);
 
       const result = await service.getOhlc('bitcoin', '7');
 
       expect(binanceClient.getOhlc).toHaveBeenCalled();
-      expect(coincapClient.getOhlc).toHaveBeenCalledWith('bitcoin', '7');
+      expect(coinpaprikaClient.getOhlc).toHaveBeenCalledWith('bitcoin', '7');
       expect(result).toEqual(mockOhlcData);
     });
 
     it('throws Bad Gateway when ALL providers fail', async () => {
       vi.spyOn(cacheManager, 'get').mockResolvedValue(null);
       vi.spyOn(binanceClient, 'getOhlc').mockRejectedValue(new Error('Binance down'));
-      vi.spyOn(coincapClient, 'getOhlc').mockRejectedValue(new Error('CoinCap down'));
+      vi.spyOn(coinpaprikaClient, 'getOhlc').mockRejectedValue(new Error('CoinPaprika down'));
 
       await expect(service.getOhlc('bitcoin', '7')).rejects.toThrow(HttpException);
       await expect(service.getOhlc('bitcoin', '7')).rejects.toMatchObject({

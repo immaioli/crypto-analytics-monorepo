@@ -4,7 +4,7 @@ import { Cache } from 'cache-manager';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { BinanceClientService } from './services/binance-client.service.js';
-import { CoinCapClientService } from './services/coincap-client.service.js';
+import { CoinPaprikaClientService } from './services/coinpaprika-client.service.js';
 import { CryptoMathService } from './services/crypto-math.service.js';
 import { CryptoDictionaryService } from './services/crypto-dictionary.service.js';
 import { ICryptoProvider } from './interfaces/crypto-provider.interface.js';
@@ -26,12 +26,12 @@ export class CryptoService {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly binanceClient: BinanceClientService,
-    private readonly coincapClient: CoinCapClientService,
+    private readonly coinpaprikaClient: CoinPaprikaClientService,
     private readonly dictionary: CryptoDictionaryService,
     private readonly mathService: CryptoMathService,
   ) {
     // Strategy Pattern: Priority ordered
-    this.providers = [this.binanceClient, this.coincapClient];
+    this.providers = [this.binanceClient, this.coinpaprikaClient];
   }
 
   /**

@@ -8,7 +8,7 @@ import { CryptoDictionaryService } from './crypto-dictionary.service.js';
 @Injectable()
 export class BinanceClientService implements ICryptoProvider {
   private readonly logger = new Logger(BinanceClientService.name);
-  private readonly baseUrl = 'https://api.binance.com/api/v3';
+  private readonly baseUrl = 'https://data-api.binance.vision/api/v3';
 
   constructor(
     private readonly httpService: HttpService,
