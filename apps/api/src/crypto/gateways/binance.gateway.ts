@@ -11,7 +11,12 @@ import WebSocket from 'ws';
 import { CryptoDictionaryService } from '../services/crypto-dictionary.service.js';
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: {
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+      : true,
+    credentials: true,
+  },
 })
 export class BinanceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

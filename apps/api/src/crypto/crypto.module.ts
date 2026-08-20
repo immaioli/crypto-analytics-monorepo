@@ -24,25 +24,33 @@ const logger = new Logger('CacheConfig');
           return { ttl: 60000 };
         }
 
-        const host = process.env.REDIS_HOST ?? 'localhost';
-        const port = Number(process.env.REDIS_PORT ?? 6379);
-
         try {
-          // If Redis is explicitly configured with a different host (like running via Docker Compose), use it
-          // Otherwise, force in-memory to prevent local dev environments crashing without Redis installed.
-          if (process.env.REDIS_HOST && process.env.REDIS_HOST !== 'localhost') {
-            const store = await redisStore({
-              url: `redis://${host}:${port}`,
-              socket: {
-                reconnectStrategy: false // Don't crash loop on failure
-              }
-            });
-            logger.log('Connected to Redis cache store.');
-            return { store, ttl: 60000 };
-          } else {
+          const redisUrl = process.env.REDIS_URL;
+          const redisHost = process.env.REDIS_HOST;
+
+          // Prefer REDIS_URL (Upstash rediss://) over host/port.
+          // Skip localhost so local machines without Redis do not crash on boot.
+          const shouldUseRedis = Boolean(
+            redisUrl || (redisHost && redisHost !== 'localhost')
+          );
+
+          if (!shouldUseRedis) {
             logger.log('Local environment detected: using in-memory cache to prevent Redis ECONNREFUSED.');
             return { ttl: 60000 };
           }
+
+          const connectionUrl =
+            redisUrl ??
+            `redis://${redisHost}:${process.env.REDIS_PORT ?? 6379}`;
+
+          const store = await redisStore({
+            url: connectionUrl,
+            socket: {
+              reconnectStrategy: false,
+            },
+          });
+          logger.log('Connected to Redis cache store.');
+          return { store, ttl: 60000 };
         } catch (error) {
           logger.warn('Redis unavailable, falling back to in-memory cache.');
           return { ttl: 60000 };
