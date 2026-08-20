@@ -16,7 +16,7 @@ out/
 build/
 
 # NestJS (Back-end)
-dist/
+apps/api/dist/
 
 # Monorepo / Caches
 .cache/
