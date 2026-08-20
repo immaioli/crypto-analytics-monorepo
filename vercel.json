@@ -1,4 +1,0 @@
-{
-  "buildCommand": "cd ../../ && npm install && npm run build:types && cd apps/web && npm run build",
-  "installCommand": "echo 'Skipping Vercel default install since buildCommand handles it'"
-}
