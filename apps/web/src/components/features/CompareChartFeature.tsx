@@ -48,12 +48,15 @@ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
       setResolvedNames(previousResolvedNames => {
         const nextResolvedNames = { ...previousResolvedNames };
         let hasChanges = false;
-        data.coins.forEach(coinData => {
-          if (!nextResolvedNames[coinData.id] || nextResolvedNames[coinData.id].name !== coinData.name) {
-            nextResolvedNames[coinData.id] = { name: coinData.name, symbol: coinData.symbol };
-            hasChanges = true;
-          }
-        });
+        if (data && data.coins) {
+          data.coins.forEach(coinData => {
+            const cached = nextResolvedNames[coinData.id];
+            if (!cached || cached.name !== coinData.name) {
+              nextResolvedNames[coinData.id] = { name: coinData.name, symbol: coinData.symbol };
+              hasChanges = true;
+            }
+          });
+        }
         return hasChanges ? nextResolvedNames : previousResolvedNames;
       });
     }

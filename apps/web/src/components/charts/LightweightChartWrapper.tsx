@@ -82,9 +82,9 @@ export function LightweightChartWrapper({ type, data, multiLineData, liveUpdate,
 
     // For multi-line, data length is based on the first series
     let dataLen = 0;
-    if (type === 'multi-line' && multiLineData && multiLineData.length > 0) {
+    if (type === 'multi-line' && multiLineData && multiLineData.length > 0 && multiLineData[0] && multiLineData[0].data) {
       dataLen = multiLineData[0].data.length;
-    } else if (Array.isArray(data)) {
+    } else if (data && Array.isArray(data)) {
       dataLen = data.length;
     }
 

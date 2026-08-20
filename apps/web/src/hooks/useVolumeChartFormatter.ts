@@ -9,12 +9,15 @@ export function useVolumeChartFormatter(historyData: CoinHistory | undefined) {
     const volumeData = historyData.prices.map((point, index) => {
       // Logic for coloring the volume bar: green if price went up, red if price went down
       let color = '#3b82f6'; // Default blue
-      if (index > 0) {
-        const prevPrice = historyData.prices[index - 1].price;
-        if (point.price > prevPrice) {
-          color = 'rgba(16, 185, 129, 0.7)'; // Emerald 500 with opacity
-        } else {
-          color = 'rgba(244, 63, 94, 0.7)'; // Rose 500 with opacity
+      if (index > 0 && historyData && historyData.prices && historyData.prices.length > 0) {
+        const prevPoint = historyData.prices[index - 1];
+        if (prevPoint) {
+          const prevPrice = prevPoint.price;
+          if (point.price > prevPrice) {
+            color = 'rgba(16, 185, 129, 0.7)'; // Emerald 500 with opacity
+          } else {
+            color = 'rgba(244, 63, 94, 0.7)'; // Rose 500 with opacity
+          }
         }
       }
 
