@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
   <h1>🚀 Dashboard Analítico de Cripto</h1>
 
   <p>
@@ -17,19 +17,25 @@
     <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
     <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
   </p>
+
+  <p align="center">
+    <a href="https://crypto.maioli.dev.br" target="_blank">
+      <img src="https://img.shields.io/badge/Demostración_en_Vivo-crypto.maioli.dev.br-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Demostración en Vivo" />
+    </a>
+  </p>
 </div>
 
 ---
 
 ## 📖 Visión General
 
-El **Dashboard Analítico de Cripto** es una aplicación web de alto rendimiento diseñada para proporcionar resúmenes del mercado en tiempo real y comparaciones detalladas de monedas lado a lado. Construido con un enfoque en la **resiliencia, velocidad y arquitectura limpia**, agrega datos de múltiples proveedores de primer nivel (Binance, CoinGecko, CoinCap) para garantizar el máximo tiempo de actividad (uptime) y la precisión de los datos.
+El **Dashboard Analítico de Cripto** es una aplicación web de alto rendimiento diseñada para proporcionar resúmenes del mercado en tiempo real y comparaciones detalladas de monedas lado a lado. Construido con un enfoque en la **resiliencia, velocidad y arquitectura limpia**, agrega datos de múltiples proveedores de primer nivel (Binance, CoinGecko, CoinPaprika) para garantizar el máximo tiempo de actividad (uptime) y la precisión de los datos.
 
 ## ✨ Características Principales
 
 - **📊 Resumen del Mercado:** Visualiza las 7 monedas de mayor volumen y las 7 con mayores ganancias en tiempo real.
 - **⚖️ Comparación Lado a Lado:** Compara hasta 5 criptomonedas simultáneamente con datos normalizados.
-- **🛡️ Resiliencia Empresarial:** Implementa los patrones **Circuit Breaker** y **Strategy**. Si el proveedor de datos principal (Binance) falla o limita las peticiones (rate-limit), el sistema recurre de manera fluida a proveedores secundarios (CoinGecko/CoinCap) sin interrumpir la solicitud del usuario.
+- **🛡️ Resiliencia Empresarial:** Implementa los patrones **Circuit Breaker** y **Strategy**. Si el proveedor de datos principal (Binance) falla o limita las peticiones (rate-limit), el sistema recurre de manera fluida a proveedores secundarios (CoinGecko/CoinPaprika) sin interrumpir la solicitud del usuario.
 - **⚡ Caché de Degradación Elegante:** Utiliza una capa de caché inteligente. Si el clúster distribuido de Redis no está disponible (`ECONNREFUSED`), el sistema realiza un fallback automático a una caché en memoria, evitando bloqueos al iniciar el servidor.
 - **🤖 Pruebas E2E Automatizadas:** Scripts integrados de Playwright para inspección visual automatizada de la UI y verificación de datos.
 
@@ -113,7 +119,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ## 🧠 Decisiones Arquitectónicas (Resumen ADR)
 
-*   **¿Por qué Múltiples Proveedores?** Las APIs cripto son notoriamente volátiles. Depender únicamente de una API genera puntos únicos de fallo. Usamos Binance para datos de liquidez masiva y CoinGecko/CoinCap para metadatos ricos (como imágenes en HD) y soporte de contingencia.
+*   **¿Por qué Múltiples Proveedores?** Las APIs cripto son notoriamente volátiles. Depender únicamente de una API genera puntos únicos de fallo. Usamos Binance para datos de liquidez masiva y CoinGecko/CoinPaprika para metadatos ricos (como imágenes en HD) y soporte de contingencia.
 *   **¿Por qué restringir a 5 monedas en comparación?** Renderizar gráficos pesados en SVG/Canvas para decenas de activos provoca bloqueos masivos en el hilo principal de la UI (jank). Restringir a 5 garantiza un desplazamiento fluido a 60fps y una legibilidad clara.
 
 ## 🤝 Contribuyendo
@@ -125,3 +131,4 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ## 📜 Licencia
 Distribuido bajo la Licencia MIT. Ver `LICENSE` para más información.
+

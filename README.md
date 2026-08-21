@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
   <h1>🚀 Crypto Analytics Dashboard</h1>
 
   <p>
@@ -16,6 +16,12 @@
     <img alt="NestJS" src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" />
     <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
     <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
+  </p>
+
+  <p align="center">
+    <a href="https://crypto.maioli.dev.br" target="_blank">
+      <img src="https://img.shields.io/badge/Live_Demo-crypto.maioli.dev.br-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+    </a>
   </p>
 </div>
 
@@ -113,7 +119,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ## 🧠 Architectural Decisions (ADR Summary)
 
-*   **Why Multiple Providers?** Crypto APIs are notoriously volatile. Relying solely on one API causes single points of failure. We use Binance for massive liquidity data and CoinGecko/CoinCap for rich metadata (like HD images) and fallback.
+*   **Why Multiple Providers?** Crypto APIs are notoriously volatile. Relying solely on one API causes single points of failure. We use Binance for massive liquidity data and CoinGecko/CoinPaprika for rich metadata (like HD images) and fallback.
 *   **Why restrict to 5 comparison coins?** Rendering heavy SVG/Canvas charts for dozens of assets causes massive UI thread blocking (jank). Restricting to 5 ensures 60fps scrolling and clear legibility.
 
 ## 🤝 Contributing
@@ -125,3 +131,4 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 ## 📜 License
 Distributed under the MIT License. See `LICENSE` for more information.
+
