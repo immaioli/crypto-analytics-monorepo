@@ -2,7 +2,7 @@ name: Keep API Awake
 
 on:
   schedule:
-    # Render sleeps after 15 minutes of inactivity. We ping every 10 minutes.
+    # Render sleeps after 15 minutes of inactivity. We ping every 10 minutes to be safe.
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
@@ -13,4 +13,4 @@ jobs:
       - name: Ping API Health Endpoint
         run: |
           # Use HEAD request so we do not download body, just verify 200 OK.
-          curl -I -s --fail https://api-dashboard-cripto.onrender.com/health || echo "Ping failed, but workflow continues."
+          curl -I -s --fail https://crypto-analytics-monorepo.onrender.com/health || echo "Ping failed, but workflow continues."

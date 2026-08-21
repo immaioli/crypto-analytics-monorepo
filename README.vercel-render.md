@@ -46,7 +46,7 @@ O tier gratuito da Render suspende sua aplicação após 15 minutos sem receber 
 Para mitigar isso de forma gratuita e transparente, criamos uma rotina no próprio repositório!
 
 1. Na raiz do seu código, edite o arquivo `.github/workflows/keep-alive.yml`.
-2. Troque a URL `https://api-dashboard-cripto.onrender.com` pela URL real que a Render gerou para sua API.
+2. O arquivo já está configurado para a URL `https://crypto-analytics-monorepo.onrender.com`.
 3. Faça commit da alteração para o GitHub. 
 
 Pronto! A cada 10 minutos, o GitHub pingará silenciosamente a sua rota leve `/health`, garantindo que a Render não suspenda a máquina e que seus `WebSockets` continuem funcionando perfeitamente em tempo real.
