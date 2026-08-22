@@ -143,7 +143,7 @@ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
                 ) : (
                   <div className={`w-4 h-4 rounded-full bg-slate-700 ${!isSelected && 'opacity-50'}`}></div>
                 )}
-                <span className={`font-medium ${isSelected ? 'text-white' : ''}`}>
+                <span className={`font-medium truncate max-w-[80px] sm:max-w-none ${isSelected ? 'text-white' : ''}`}>
                   {coin.name}
                 </span>
                 <span className={`font-semibold uppercase ${isSelected ? 'text-slate-400' : 'text-slate-500'}`}>
