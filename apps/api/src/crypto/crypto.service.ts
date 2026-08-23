@@ -102,6 +102,24 @@ export class CryptoService {
     try {
       const rawCoinData = await this.tryWithFallback(provider => provider.getCoinData(id), 'getCoinData');
       const summary = this.mathService.normalizeCoinSummary(rawCoinData);
+
+      // We need 30-day ATH/ATL from CoinGecko.
+      try {
+        const cleanId = id.includes('-') ? id.split('-')[1] || id : id;
+        const monthChart = await this.coingeckoClient.getMarketChart(cleanId, '30' as SupportedPeriod);
+        const monthly = this.mathService.extractMonthlyExtremes(monthChart.prices);
+        summary.ath = monthly.ath;
+        summary.athDate = monthly.athDate;
+        summary.atl = monthly.atl;
+        summary.atlDate = monthly.atlDate;
+      } catch (rangeError) {
+        this.logger.warn(`30-day extremes unavailable for ${id}: ${(rangeError as Error).message}`);
+        summary.ath = undefined;
+        summary.athDate = undefined;
+        summary.atl = undefined;
+        summary.atlDate = undefined;
+      }
+
       await this.cacheManager.set(cacheKey, summary, 60000);
       return summary;
     } catch (error) {

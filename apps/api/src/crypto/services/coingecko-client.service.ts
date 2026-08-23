@@ -72,21 +72,25 @@ export class CoinGeckoClientService implements ICryptoProvider {
   }
 
   async getCoinData(id: string): Promise<any> {
+    // Sanitize the ID because other providers (like CoinPaprika) might
+    // inject a hyphenated slug (e.g. btc-bitcoin) into the cache/frontend requests.
+    let cleanId = id.includes('-') ? id.split('-')[1] || id : id;
+
     // We use the markets endpoint here because it cleanly provides ATH and ATL
     // in the same flat format as getMarkets, which is exactly what our normalizeCoinSummary expects.
     const response = await firstValueFrom(
-      this.httpService.get(`/coins/markets`, {
+      this.httpService.get(`https://api.coingecko.com/api/v3/coins/markets`, {
         headers: this.getAuthHeaders(),
         params: {
           vs_currency: 'usd',
-          ids: id,
+          ids: cleanId,
           sparkline: false,
         },
       })
     );
 
     if (!response.data || response.data.length === 0) {
-      throw new Error(`CoinGecko: Coin data not found for ${id}`);
+      throw new Error(`CoinGecko: Coin data not found for ${cleanId}`);
     }
 
     // Include provider identifier for math service

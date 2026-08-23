@@ -30,6 +30,79 @@ export class CryptoMathService {
     return data as OhlcCandle[];
   }
 
+  /**
+   * Derive extremes from a daily close series for the last 30 days.
+   */
+  extractMonthlyExtremes(prices: [number, number][]): {
+    ath?: number;
+    athDate?: string;
+    atl?: number;
+    atlDate?: string;
+  } {
+    if (!prices || prices.length === 0 || !prices[0]) return {};
+
+    let high = prices[0][1];
+    let highTs = prices[0][0];
+    let low = prices[0][1];
+    let lowTs = prices[0][0];
+
+    for (const [timestampMs, price] of prices) {
+      if (typeof price !== 'number' || Number.isNaN(price)) continue;
+      if (price > high) {
+        high = price;
+        highTs = timestampMs;
+      }
+      if (price < low) {
+        low = price;
+        lowTs = timestampMs;
+      }
+    }
+
+    return {
+      ath: high,
+      athDate: new Date(highTs).toISOString(),
+      atl: low,
+      atlDate: new Date(lowTs).toISOString(),
+    };
+  }
+
+  /**
+   * Derive extremes from a daily close series.
+   * (Kept for historical/compatibility reasons if ever needed again)
+   */
+  extractYearlyExtremes(prices: [number, number][]): {
+    ath?: number;
+    athDate?: string;
+    atl?: number;
+    atlDate?: string;
+  } {
+    if (!prices || prices.length === 0 || !prices[0]) return {};
+
+    let high = prices[0][1];
+    let highTs = prices[0][0];
+    let low = prices[0][1];
+    let lowTs = prices[0][0];
+
+    for (const [timestampMs, price] of prices) {
+      if (typeof price !== 'number' || Number.isNaN(price)) continue;
+      if (price > high) {
+        high = price;
+        highTs = timestampMs;
+      }
+      if (price < low) {
+        low = price;
+        lowTs = timestampMs;
+      }
+    }
+
+    return {
+      ath: high,
+      athDate: new Date(highTs).toISOString(),
+      atl: low,
+      atlDate: new Date(lowTs).toISOString(),
+    };
+  }
+
   normalizeHistory(prices: [number, number][], volumes: [number, number][]): HistoryPoint[] {
     return prices.map((pricePoint, index) => {
       return {
