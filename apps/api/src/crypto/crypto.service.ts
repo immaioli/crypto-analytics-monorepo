@@ -107,7 +107,7 @@ export class CryptoService {
       try {
         const cleanId = id.includes('-') ? id.split('-')[1] || id : id;
 
-        // ADDED: Try to use cached month chart to avoid spamming the endpoint
+        // Try to use cached month chart to avoid spamming the endpoint
         const monthChartCacheKey = `coins_${cleanId}_history_30`;
         let monthChart = await this.cacheManager.get<CoinHistory>(monthChartCacheKey);
 
@@ -119,7 +119,6 @@ export class CryptoService {
           summary.atl = monthly.atl;
           summary.atlDate = monthly.atlDate;
         } else {
-           // We have the cached formatted history array which contains timestampMs and price
            const rawPrices: [number, number][] = monthChart.prices.map(p => [p.timestampMs, p.price]);
            const monthly = this.mathService.extractMonthlyExtremes(rawPrices);
            summary.ath = monthly.ath;
@@ -129,9 +128,9 @@ export class CryptoService {
         }
       } catch (rangeError) {
         this.logger.warn(`30-day extremes unavailable for ${id}: ${(rangeError as Error).message}`);
-        summary.ath = undefined;
+        summary.ath = 0;
         summary.athDate = undefined;
-        summary.atl = undefined;
+        summary.atl = 0;
         summary.atlDate = undefined;
       }
 

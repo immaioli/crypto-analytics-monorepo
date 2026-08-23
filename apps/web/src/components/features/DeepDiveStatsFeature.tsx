@@ -62,7 +62,7 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
             <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day High</h4>
             <p className="text-lg font-semibold text-slate-200">
-              {selectedCoin.ath ? `$${selectedCoin.ath.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
+              {selectedCoin.ath !== undefined ? `$${selectedCoin.ath.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
             </p>
             <p className="text-xs text-emerald-500/80 mt-1">
               {selectedCoin.athDate ? new Date(selectedCoin.athDate).toLocaleDateString() : 'Monthly peak'}
@@ -72,7 +72,7 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
             <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day Low</h4>
             <p className="text-lg font-semibold text-slate-200">
-              {selectedCoin.atl ? `$${selectedCoin.atl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
+              {selectedCoin.atl !== undefined ? `$${selectedCoin.atl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
             </p>
             <p className="text-xs text-rose-500/80 mt-1">
               {selectedCoin.atlDate ? new Date(selectedCoin.atlDate).toLocaleDateString() : 'Monthly bottom'}
