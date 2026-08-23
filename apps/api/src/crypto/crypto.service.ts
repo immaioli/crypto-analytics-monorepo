@@ -67,7 +67,7 @@ export class CryptoService {
   async handleCronTopCoinsUpdate() {
     this.logger.debug('Background Worker: Pre-fetching Top Coins...');
     try {
-      const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(10), 'getMarkets');
+      const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(14), 'getMarkets');
       const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
       await this.cacheManager.set('coins_top_10', normalizedData, 65000);
       this.logger.debug('Background Worker: Top Coins cache updated successfully.');
@@ -106,12 +106,27 @@ export class CryptoService {
       // We need 30-day ATH/ATL from CoinGecko.
       try {
         const cleanId = id.includes('-') ? id.split('-')[1] || id : id;
-        const monthChart = await this.coingeckoClient.getMarketChart(cleanId, '30' as SupportedPeriod);
-        const monthly = this.mathService.extractMonthlyExtremes(monthChart.prices);
-        summary.ath = monthly.ath;
-        summary.athDate = monthly.athDate;
-        summary.atl = monthly.atl;
-        summary.atlDate = monthly.atlDate;
+
+        // ADDED: Try to use cached month chart to avoid spamming the endpoint
+        const monthChartCacheKey = `coins_${cleanId}_history_30`;
+        let monthChart = await this.cacheManager.get<CoinHistory>(monthChartCacheKey);
+
+        if (!monthChart) {
+          const rawMonthChart = await this.coingeckoClient.getMarketChart(cleanId, '30' as SupportedPeriod);
+          const monthly = this.mathService.extractMonthlyExtremes(rawMonthChart.prices);
+          summary.ath = monthly.ath;
+          summary.athDate = monthly.athDate;
+          summary.atl = monthly.atl;
+          summary.atlDate = monthly.atlDate;
+        } else {
+           // We have the cached formatted history array which contains timestampMs and price
+           const rawPrices: [number, number][] = monthChart.prices.map(p => [p.timestampMs, p.price]);
+           const monthly = this.mathService.extractMonthlyExtremes(rawPrices);
+           summary.ath = monthly.ath;
+           summary.athDate = monthly.athDate;
+           summary.atl = monthly.atl;
+           summary.atlDate = monthly.atlDate;
+        }
       } catch (rangeError) {
         this.logger.warn(`30-day extremes unavailable for ${id}: ${(rangeError as Error).message}`);
         summary.ath = undefined;
@@ -137,7 +152,9 @@ export class CryptoService {
         marketCap: 0,
         marketCapRank: 0,
         totalVolume: 0,
-        priceChangePercentage24h: 0
+        priceChangePercentage24h: 0,
+        ath: 0,
+        atl: 0
       };
     }
   }
