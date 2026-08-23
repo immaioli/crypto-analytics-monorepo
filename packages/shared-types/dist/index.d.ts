@@ -9,10 +9,10 @@ export interface CoinSummary {
     marketCapRank: number;
     totalVolume: number;
     priceChangePercentage24h: number;
-    ath?: number;
-    athDate?: string;
-    atl?: number;
-    atlDate?: string;
+    ath?: number | undefined;
+    athDate?: string | undefined;
+    atl?: number | undefined;
+    atlDate?: string | undefined;
 }
 export type OhlcCandle = [
     timestampMs: number,
