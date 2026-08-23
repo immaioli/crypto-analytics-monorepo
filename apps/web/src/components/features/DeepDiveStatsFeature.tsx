@@ -60,7 +60,7 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
           </div>
 
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day High (ATH)</h4>
+            <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day High</h4>
             <p className="text-lg font-semibold text-slate-200">
               {selectedCoin.ath ? `$${selectedCoin.ath.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
             </p>
@@ -70,7 +70,7 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
           </div>
 
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day Low (ATL)</h4>
+            <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day Low</h4>
             <p className="text-lg font-semibold text-slate-200">
               {selectedCoin.atl ? `$${selectedCoin.atl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
             </p>
