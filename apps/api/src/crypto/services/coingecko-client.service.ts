@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import axiosRetry from 'axios-retry';
+import { ICryptoProvider } from '../interfaces/crypto-provider.interface.js';
 
 @Injectable()
-export class CoinGeckoClientService {
+export class CoinGeckoClientService implements ICryptoProvider {
   private readonly logger = new Logger(CoinGeckoClientService.name);
 
   constructor(private readonly httpService: HttpService) {
@@ -30,7 +31,7 @@ export class CoinGeckoClientService {
 
   async getMarkets(limit: number = 5): Promise<any[]> {
     const response = await firstValueFrom(
-      this.httpService.get('/coins/markets', {
+      this.httpService.get('https://api.coingecko.com/api/v3/coins/markets', {
         headers: this.getAuthHeaders(),
         params: {
           vs_currency: 'usd',
@@ -46,7 +47,7 @@ export class CoinGeckoClientService {
 
   async getOhlc(id: string, days: string): Promise<any[]> {
     const response = await firstValueFrom(
-      this.httpService.get(`/coins/${id}/ohlc`, {
+      this.httpService.get(`https://api.coingecko.com/api/v3/coins/${id}/ohlc`, {
         headers: this.getAuthHeaders(),
         params: {
           vs_currency: 'usd',
@@ -59,7 +60,7 @@ export class CoinGeckoClientService {
 
   async getMarketChart(id: string, days: string): Promise<any> {
     const response = await firstValueFrom(
-      this.httpService.get(`/coins/${id}/market_chart`, {
+      this.httpService.get(`https://api.coingecko.com/api/v3/coins/${id}/market_chart`, {
         headers: this.getAuthHeaders(),
         params: {
           vs_currency: 'usd',
@@ -71,18 +72,24 @@ export class CoinGeckoClientService {
   }
 
   async getCoinData(id: string): Promise<any> {
+    // We use the markets endpoint here because it cleanly provides ATH and ATL
+    // in the same flat format as getMarkets, which is exactly what our normalizeCoinSummary expects.
     const response = await firstValueFrom(
-      this.httpService.get(`/coins/${id}`, {
+      this.httpService.get(`/coins/markets`, {
         headers: this.getAuthHeaders(),
         params: {
-          localization: false,
-          tickers: false,
-          community_data: false,
-          developer_data: false,
+          vs_currency: 'usd',
+          ids: id,
           sparkline: false,
         },
       })
     );
-    return response.data;
+
+    if (!response.data || response.data.length === 0) {
+      throw new Error(`CoinGecko: Coin data not found for ${id}`);
+    }
+
+    // Include provider identifier for math service
+    return { ...response.data[0], _provider: 'coingecko' };
   }
 }

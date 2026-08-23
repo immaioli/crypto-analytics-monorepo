@@ -10,6 +10,7 @@ import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { PeriodSelector } from '../ui/PeriodSelector';
 import { ChartLoadingView, ChartErrorView } from '../ui/ChartStates';
 import { SelectedAssetBadge } from '../ui/SelectedAssetBadge';
+import { useCoinSummary } from '@/hooks/useCoinSummary';
 
 interface OhlcChartFeatureProps {
   coins: CoinSummary[];
@@ -32,6 +33,7 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
 
   const { data: ohlcData, isLoading, isError } = useOhlc(localCoinId, days);
   const { liveData } = useLiveTicker(localCoinId);
+  const { data: coinSummary } = useCoinSummary(localCoinId);
 
   // Formatting extracted to Custom Hook (Separation of Concerns)
   const { chartData, priceLines } = useOhlcChartFormatter(ohlcData);
@@ -50,8 +52,32 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <SelectedAssetBadge fallbackId={coins.length > 0 ? coins[0]?.id || "" : ""} />
+
+          {coinSummary?.ath && coinSummary?.atl && (
+            <>
+              <div className="hidden sm:block h-10 w-px bg-slate-800"></div>
+              <div className="hidden sm:flex items-center gap-3 text-xs border border-slate-700 bg-[#0b1220] rounded-lg px-3 py-1.5">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-slate-500">ATH</span>
+                  <span className="text-emerald-400 font-medium">${coinSummary.ath.toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                  <span className="text-[10px] text-emerald-500/70 ml-1">
+                    {coinSummary.athDate ? new Date(coinSummary.athDate).toLocaleDateString(undefined, { month: 'short', year: '2-digit'}) : ''}
+                  </span>
+                </div>
+                <div className="w-px h-3 bg-slate-700"></div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-slate-500">ATL</span>
+                  <span className="text-rose-400 font-medium">${coinSummary.atl.toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                  <span className="text-[10px] text-rose-500/70 ml-1">
+                    {coinSummary.atlDate ? new Date(coinSummary.atlDate).toLocaleDateString(undefined, { month: 'short', year: '2-digit'}) : ''}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
           {liveData && (
             <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded border border-emerald-500/20">
               <span className="relative flex h-2 w-2">

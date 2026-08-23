@@ -19,6 +19,10 @@ export class CryptoMathService {
       marketCapRank: coin.market_cap_rank,
       totalVolume: coin.total_volume,
       priceChangePercentage24h: coin.price_change_percentage_24h,
+      ath: coin.ath || coin.ath_price,
+      athDate: coin.athDate || coin.ath_date,
+      atl: coin.atl,
+      atlDate: coin.atlDate || coin.atl_date,
     };
   }
 

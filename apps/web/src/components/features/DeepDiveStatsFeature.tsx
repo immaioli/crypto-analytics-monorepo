@@ -60,17 +60,23 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
           </div>
 
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">Price Delta (24h)</h4>
+            <h4 className="text-sm font-medium text-slate-400 mb-1">All-Time High (ATH)</h4>
             <p className="text-lg font-semibold text-slate-200">
-              ${Math.abs(selectedCoin.currentPrice * (selectedCoin.priceChangePercentage24h / 100)).toFixed(4)}
+              {selectedCoin.ath ? `$${selectedCoin.ath.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Nominal value change</p>
+            <p className="text-xs text-emerald-500/80 mt-1">
+              {selectedCoin.athDate ? new Date(selectedCoin.athDate).toLocaleDateString() : 'Historical peak'}
+            </p>
           </div>
 
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">Network Base</h4>
-            <p className="text-lg font-semibold text-slate-200 uppercase">{selectedCoin.symbol}</p>
-            <p className="text-xs text-emerald-500/80 mt-1">● Active tracking</p>
+            <h4 className="text-sm font-medium text-slate-400 mb-1">All-Time Low (ATL)</h4>
+            <p className="text-lg font-semibold text-slate-200">
+              {selectedCoin.atl ? `$${selectedCoin.atl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
+            </p>
+            <p className="text-xs text-rose-500/80 mt-1">
+              {selectedCoin.atlDate ? new Date(selectedCoin.atlDate).toLocaleDateString() : 'Historical bottom'}
+            </p>
           </div>
         </div>
       </div>
