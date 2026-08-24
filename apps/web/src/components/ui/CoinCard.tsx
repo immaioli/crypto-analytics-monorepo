@@ -50,10 +50,10 @@ export function CoinCard({ coin, isSelected, onClick, onRemove }: CoinCardProps)
       {/* Row 3: Price and Percentage */}
       <div className="mt-auto flex items-baseline gap-2 flex-wrap">
         <div className="text-base font-semibold text-white tracking-tight">
-          ${coin.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+          ${coin.currentPrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) ?? '0.00'}
         </div>
         <div className={`text-xs font-medium ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {isPositive ? '+' : ''}{coin.priceChangePercentage24h.toFixed(2)}%
+          {isPositive ? '+' : ''}{coin.priceChangePercentage24h != null ? coin.priceChangePercentage24h.toFixed(2) : '0.00'}%
         </div>
       </div>
     </div>
