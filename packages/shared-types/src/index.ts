@@ -4,6 +4,7 @@ export interface ProviderCapsule {
   label: string;
   value: string;
   provider: 'coingecko' | 'binance' | 'coinpaprika' | 'system';
+  category?: 'realTime' | 'metadata' | 'riskAndValidation';
 }
 
 export interface CoinSummary {

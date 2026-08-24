@@ -145,23 +145,43 @@ export class CryptoService {
 
       // Extract details for Capsules
       if (cgResult.status === 'fulfilled') {
-         summary.capsules.push({ label: 'Market Cap Rank', value: `#${cgResult.value.market_cap_rank}`, provider: 'coingecko' });
-         if (cgResult.value.circulating_supply) summary.capsules.push({ label: 'Circulating Supply', value: cgResult.value.circulating_supply.toLocaleString(), provider: 'coingecko' });
-         if (cgResult.value.max_supply) summary.capsules.push({ label: 'Max Supply', value: cgResult.value.max_supply.toLocaleString(), provider: 'coingecko' });
-         summary.capsules.push({ label: '24h High', value: `$${cgResult.value.high_24h}`, provider: 'coingecko' });
-         summary.capsules.push({ label: '24h Low', value: `$${cgResult.value.low_24h}`, provider: 'coingecko' });
+         // CoinGecko provides circulating supply, max supply, 24h high/low
+         summary.capsules.push({ label: 'Market Cap Rank', value: `#${cgResult.value.market_cap_rank}`, provider: 'coingecko', category: 'metadata' });
+         if (cgResult.value.circulating_supply) summary.capsules.push({ label: 'Circulating Supply', value: cgResult.value.circulating_supply.toLocaleString(), provider: 'coingecko', category: 'metadata' });
+         if (cgResult.value.max_supply) summary.capsules.push({ label: 'Max Supply', value: cgResult.value.max_supply.toLocaleString(), provider: 'coingecko', category: 'metadata' });
+         summary.capsules.push({ label: 'Market Cap', value: `$${Number(cgResult.value.market_cap || 0).toLocaleString()}`, provider: 'coingecko', category: 'metadata' });
+         summary.capsules.push({ label: 'ATH Price', value: `$${cgResult.value.ath || 0}`, provider: 'coingecko', category: 'metadata' });
+         summary.capsules.push({ label: 'ATH Change', value: `${cgResult.value.ath_change_percentage || 0}%`, provider: 'coingecko', category: 'metadata' });
+         if (cgResult.value.ath_date) summary.capsules.push({ label: 'ATH Date', value: new Date(cgResult.value.ath_date).toLocaleDateString(), provider: 'coingecko', category: 'metadata' });
+         summary.capsules.push({ label: 'ATL Price', value: `$${cgResult.value.atl || 0}`, provider: 'coingecko', category: 'metadata' });
+         summary.capsules.push({ label: 'ATL Change', value: `${cgResult.value.atl_change_percentage || 0}%`, provider: 'coingecko', category: 'metadata' });
+         if (cgResult.value.atl_date) summary.capsules.push({ label: 'ATL Date', value: new Date(cgResult.value.atl_date).toLocaleDateString(), provider: 'coingecko', category: 'metadata' });
       }
 
       if (binanceResult.status === 'fulfilled') {
-         // Binance provides exact bid/ask and raw volume
-         summary.capsules.push({ label: 'Binance Bid', value: `$${binanceResult.value.current_price.toLocaleString()}`, provider: 'binance' });
-         summary.capsules.push({ label: '24h Volume', value: `$${binanceResult.value.total_volume.toLocaleString()}`, provider: 'binance' });
+         // Binance provides EXACT real-time pricing and deep orderbook info
+         summary.capsules.push({ label: 'Current Price', value: `$${binanceResult.value.lastPrice || binanceResult.value.current_price}`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: '24h Change', value: `${binanceResult.value.priceChange || 0} USD`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: '24h % Change', value: `${binanceResult.value.priceChangePercent || binanceResult.value.price_change_percentage_24h || 0}%`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: '24h High', value: `$${binanceResult.value.highPrice || 0}`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: '24h Low', value: `$${binanceResult.value.lowPrice || 0}`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: 'Bid Price', value: `$${binanceResult.value.bidPrice || 0}`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: 'Ask Price', value: `$${binanceResult.value.askPrice || 0}`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: 'Base Volume', value: `${binanceResult.value.volume || binanceResult.value.total_volume || 0}`, provider: 'binance', category: 'realTime' });
+         summary.capsules.push({ label: 'Quote Volume', value: `$${Number(binanceResult.value.quoteVolume || 0).toLocaleString()}`, provider: 'binance', category: 'realTime' });
       }
 
       if (cpResult.status === 'fulfilled') {
-         summary.capsules.push({ label: 'Change (1h)', value: `${cpResult.value.price_change_percentage_1h || 0}%`, provider: 'coinpaprika' });
-         summary.capsules.push({ label: 'Change (12h)', value: `${cpResult.value.price_change_percentage_12h || 0}%`, provider: 'coinpaprika' });
-         summary.capsules.push({ label: 'Change (7d)', value: `${cpResult.value.price_change_percentage_7d || 0}%`, provider: 'coinpaprika' });
+         // CoinPaprika provides extended historical % change and betas
+         const quotes = cpResult.value.quotes?.USD;
+         if (cpResult.value.beta_value) summary.capsules.push({ label: 'Beta Value', value: `${cpResult.value.beta_value}`, provider: 'coinpaprika', category: 'riskAndValidation' });
+         if (quotes) {
+           if (quotes.percent_change_15m) summary.capsules.push({ label: '15m Volatility', value: `${quotes.percent_change_15m}%`, provider: 'coinpaprika', category: 'riskAndValidation' });
+           if (quotes.percent_change_1h) summary.capsules.push({ label: '1h Volatility', value: `${quotes.percent_change_1h}%`, provider: 'coinpaprika', category: 'riskAndValidation' });
+           if (quotes.percent_change_7d) summary.capsules.push({ label: '7d Volatility', value: `${quotes.percent_change_7d}%`, provider: 'coinpaprika', category: 'riskAndValidation' });
+           if (quotes.percent_change_30d) summary.capsules.push({ label: '30d Volatility', value: `${quotes.percent_change_30d}%`, provider: 'coinpaprika', category: 'riskAndValidation' });
+           if (quotes.percent_change_1y) summary.capsules.push({ label: '1y Volatility', value: `${quotes.percent_change_1y}%`, provider: 'coinpaprika', category: 'riskAndValidation' });
+         }
       }
 
       // We need 30-day ATH/ATL from CoinGecko.

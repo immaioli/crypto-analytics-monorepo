@@ -46,45 +46,95 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-6">
-          {/* Default Info preserved as capsules too or alongside the new capsules */}
-          <div className="flex flex-wrap gap-3">
-            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
-              <span className="text-xs text-slate-500">{t('conversion')}</span>
-              <span className="text-sm text-slate-200 font-medium">R$ {(selectedCoin.currentPrice * 5.4).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
-              <span className="text-xs text-slate-500">{t('volume_24h')}</span>
-              <span className="text-sm text-slate-200 font-medium">${(selectedCoin.totalVolume / 1e6).toFixed(2)}M</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
-              <span className="text-xs text-slate-500">{t('high_30d')}</span>
-              <span className="text-sm text-emerald-400 font-medium">{selectedCoin.ath !== undefined ? `$${selectedCoin.ath.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : t('na')}</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
-              <span className="text-xs text-slate-500">{t('low_30d')}</span>
-              <span className="text-sm text-rose-400 font-medium">{selectedCoin.atl !== undefined ? `$${selectedCoin.atl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : t('na')}</span>
-            </div>
-          </div>
-
-          {/* Aggregated Capsules from Backend */}
+        <div className="flex flex-col gap-8">
+          {/* Aggregated Capsules Grouped by Category */}
           {selectedCoin.capsules && selectedCoin.capsules.length > 0 && (
-            <div className="pt-4 border-t border-slate-800/50">
-              <div className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">{t('aggregated_data')}</div>
-              <div className="flex flex-wrap gap-3">
-                {selectedCoin.capsules.map((capsule, idx) => {
-                  let providerColor = 'bg-slate-800 text-slate-400';
-                  if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/20';
-                  if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-                  if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+            <div className="flex flex-col gap-6">
 
-                  return (
-                    <div key={idx} className={`border rounded-full px-3 py-1.5 flex items-center gap-2 ${providerColor}`}>
-                      <span className="text-xs opacity-75">{capsule.label}:</span>
-                      <span className="text-sm font-semibold">{capsule.value}</span>
-                    </div>
-                  );
-                })}
+              {/* Category: Real-Time Data */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  Real-Time Trading
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {selectedCoin.capsules.filter(c => c.category === 'realTime').map((capsule, idx) => {
+                    let providerColor = 'bg-slate-800 text-slate-400 border-slate-700';
+                    if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/30';
+                    if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+                    if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/30';
+
+                    return (
+                      <div key={idx} className={`border rounded-lg px-4 py-2 flex flex-col justify-center min-w-[140px] ${providerColor} hover:brightness-125 transition-all shadow-sm`}>
+                        <span className="text-[10px] opacity-75 leading-tight mb-1">{capsule.label}</span>
+                        <span className="text-sm font-semibold leading-tight">{capsule.value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category: Metadata & Fundamentals */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                  Fundamentals & Supply
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {selectedCoin.capsules.filter(c => c.category === 'metadata' || !c.category).map((capsule, idx) => {
+                    let providerColor = 'bg-slate-800 text-slate-400 border-slate-700';
+                    if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/30';
+                    if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+                    if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/30';
+
+                    return (
+                      <div key={idx} className={`border rounded-lg px-4 py-2 flex flex-col justify-center min-w-[140px] ${providerColor} hover:brightness-125 transition-all shadow-sm`}>
+                        <span className="text-[10px] opacity-75 leading-tight mb-1">{capsule.label}</span>
+                        <span className="text-sm font-semibold leading-tight">{capsule.value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category: Risk & Validation */}
+              <div>
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                  Risk & Volatility
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {selectedCoin.capsules.filter(c => c.category === 'riskAndValidation').map((capsule, idx) => {
+                    let providerColor = 'bg-slate-800 text-slate-400 border-slate-700';
+                    if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/30';
+                    if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
+                    if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/30';
+
+                    return (
+                      <div key={idx} className={`border rounded-lg px-4 py-2 flex flex-col justify-center min-w-[140px] ${providerColor} hover:brightness-125 transition-all shadow-sm`}>
+                        <span className="text-[10px] opacity-75 leading-tight mb-1">{capsule.label}</span>
+                        <span className="text-sm font-semibold leading-tight">{capsule.value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Legends Footer */}
+              <div className="mt-6 pt-4 border-t border-slate-800/50 flex flex-wrap gap-4 items-center justify-center sm:justify-start">
+                <span className="text-xs text-slate-500 mr-2">Data Sources:</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/50 border border-yellow-500"></div>
+                  <span className="text-xs text-slate-400">Binance</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500/50 border border-green-500"></div>
+                  <span className="text-xs text-slate-400">CoinGecko</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500/50 border border-orange-500"></div>
+                  <span className="text-xs text-slate-400">CoinPaprika</span>
+                </div>
               </div>
             </div>
           )}
