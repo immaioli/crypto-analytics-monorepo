@@ -65,11 +65,34 @@ export class CryptoService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCronTopCoinsUpdate() {
-    this.logger.debug('Background Worker: Pre-fetching Top Coins...');
+    this.logger.debug('Background Worker: Pre-fetching Top Coins and Populating Cache...');
     try {
+      const topCoinIds = this.dictionary.getTopCoinIds(14);
+
+      // Delay helper to avoid bursting APIs
+      const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+      for (const id of topCoinIds) {
+        try {
+          // Pre-fetch the summary which now populates 'coin_summary_id'
+          await this.getCoinSummary(id);
+
+          // Pre-fetch 30-day OHLC and History as they are the default views
+          await this.getOhlc(id, '30');
+          await this.getHistory(id, '30');
+
+          // Small delay to respect rate limits between coins
+          await delay(200);
+        } catch (innerError) {
+           this.logger.warn(`Failed to pre-fetch data for ${id} in background worker: ${(innerError as Error).message}`);
+        }
+      }
+
+      // Re-fetch the markets to keep the actual "Top Coins" list fresh
       const rawMarketData = await this.tryWithFallback(provider => provider.getMarkets(14), 'getMarkets');
       const normalizedData = this.mathService.normalizeTopCoins(rawMarketData);
       await this.cacheManager.set('coins_top_10', normalizedData, 65000);
+
       this.logger.debug('Background Worker: Top Coins cache updated successfully.');
     } catch (cronError) {
       this.logger.error('Background Worker Failed to update cache. Circuit Breaker will use stale data if available.', cronError);
@@ -100,8 +123,46 @@ export class CryptoService {
     if (cachedData && cachedData.image && !cachedData.image.includes('ui-avatars')) return cachedData;
 
     try {
-      const rawCoinData = await this.tryWithFallback(provider => provider.getCoinData(id), 'getCoinData');
-      const summary = this.mathService.normalizeCoinSummary(rawCoinData);
+      // Execute all three providers concurrently but safely
+      const [cgResult, binanceResult, cpResult] = await Promise.allSettled([
+        this.coingeckoClient.getCoinData(id),
+        this.binanceClient.getCoinData(id),
+        this.coinpaprikaClient.getCoinData(id)
+      ]);
+
+      // If all three failed completely, throw to hit the dictionary fallback
+      if (cgResult.status === 'rejected' && binanceResult.status === 'rejected' && cpResult.status === 'rejected') {
+        throw new Error('All providers failed to fetch coin data');
+      }
+
+      // We need a baseline to normalize. Prefer CoinGecko, then Binance, then CoinPaprika
+      const baseRawData = cgResult.status === 'fulfilled' ? cgResult.value :
+                          (binanceResult.status === 'fulfilled' ? binanceResult.value :
+                          (cpResult.status === 'fulfilled' ? cpResult.value : null));
+
+      const summary = this.mathService.normalizeCoinSummary(baseRawData);
+      summary.capsules = [];
+
+      // Extract details for Capsules
+      if (cgResult.status === 'fulfilled') {
+         summary.capsules.push({ label: 'Market Cap Rank', value: `#${cgResult.value.market_cap_rank}`, provider: 'coingecko' });
+         if (cgResult.value.circulating_supply) summary.capsules.push({ label: 'Circulating Supply', value: cgResult.value.circulating_supply.toLocaleString(), provider: 'coingecko' });
+         if (cgResult.value.max_supply) summary.capsules.push({ label: 'Max Supply', value: cgResult.value.max_supply.toLocaleString(), provider: 'coingecko' });
+         summary.capsules.push({ label: '24h High', value: `$${cgResult.value.high_24h}`, provider: 'coingecko' });
+         summary.capsules.push({ label: '24h Low', value: `$${cgResult.value.low_24h}`, provider: 'coingecko' });
+      }
+
+      if (binanceResult.status === 'fulfilled') {
+         // Binance provides exact bid/ask and raw volume
+         summary.capsules.push({ label: 'Binance Bid', value: `$${binanceResult.value.current_price.toLocaleString()}`, provider: 'binance' });
+         summary.capsules.push({ label: '24h Volume', value: `$${binanceResult.value.total_volume.toLocaleString()}`, provider: 'binance' });
+      }
+
+      if (cpResult.status === 'fulfilled') {
+         summary.capsules.push({ label: 'Change (1h)', value: `${cpResult.value.price_change_percentage_1h || 0}%`, provider: 'coinpaprika' });
+         summary.capsules.push({ label: 'Change (12h)', value: `${cpResult.value.price_change_percentage_12h || 0}%`, provider: 'coinpaprika' });
+         summary.capsules.push({ label: 'Change (7d)', value: `${cpResult.value.price_change_percentage_7d || 0}%`, provider: 'coinpaprika' });
+      }
 
       // We need 30-day ATH/ATL from CoinGecko.
       try {

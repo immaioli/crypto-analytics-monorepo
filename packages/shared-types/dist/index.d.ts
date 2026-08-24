@@ -1,4 +1,9 @@
 export type SupportedPeriod = "1" | "7" | "30";
+export interface ProviderCapsule {
+    label: string;
+    value: string;
+    provider: 'coingecko' | 'binance' | 'coinpaprika' | 'system';
+}
 export interface CoinSummary {
     id: string;
     symbol: string;
@@ -13,6 +18,7 @@ export interface CoinSummary {
     athDate?: string | undefined;
     atl?: number | undefined;
     atlDate?: string | undefined;
+    capsules?: ProviderCapsule[];
 }
 export type OhlcCandle = [
     timestampMs: number,

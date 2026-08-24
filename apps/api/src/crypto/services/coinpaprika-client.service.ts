@@ -72,6 +72,9 @@ export class CoinPaprikaClientService implements ICryptoProvider {
       current_price: parseFloat(asset.quotes.USD.price) || 0,
       total_volume: parseFloat(asset.quotes.USD.volume_24h) || 0,
       price_change_percentage_24h: parseFloat(asset.quotes.USD.percent_change_24h) || 0,
+      price_change_percentage_1h: parseFloat(asset.quotes.USD.percent_change_1h) || 0,
+      price_change_percentage_12h: parseFloat(asset.quotes.USD.percent_change_12h) || 0,
+      price_change_percentage_7d: parseFloat(asset.quotes.USD.percent_change_7d) || 0,
       market_cap: parseFloat(asset.quotes.USD.market_cap) || 0,
       market_cap_rank: parseInt(asset.rank, 10) || 0
     };
