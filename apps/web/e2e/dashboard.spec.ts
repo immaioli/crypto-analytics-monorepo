@@ -4,8 +4,8 @@ test.describe('Dashboard Navigation and Caching E2E', () => {
   // Vamos pausar a página (deixar o navegador aberto) indefinidamente ao final usando page.pause().
   test('Should navigate tabs, search multiple coins, and validate layout', async ({ page }) => {
     test.setTimeout(86400000); // 24 hours just in case
-    // Acessa o dashboard local
-    await page.goto('http://localhost:3000');
+    // Acessa o dashboard local no idioma default
+    await page.goto('http://localhost:3000/en');
 
     // 1. Confirma que a página carregou a listagem de Top Coins
     await expect(page.getByRole('heading', { name: 'Crypto Analytics' })).toBeVisible({ timeout: 15000 });

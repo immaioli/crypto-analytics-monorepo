@@ -10,7 +10,7 @@ test.describe('Live Trading Ticker', () => {
     });
 
     // 1. Acessa a dashboard e vai pra aba OHLC (Price Action)
-    await page.goto('http://localhost:3000');
+    await page.goto('http://localhost:3000/en');
     
     // Clica na aba "Price Action (OHLC)"
     await page.click('button:has-text("Price Action")');
@@ -18,7 +18,7 @@ test.describe('Live Trading Ticker', () => {
     // 2. Aguarda a aba carregar e o socket emitir
     const liveIndicator = page.locator('text=Live').first();
     
-    // Aguarda no maximo 10 segundos para a conexão do socket ser aceita
+    // Aguarda no maximo 10 segundos para a conexï¿½o do socket ser aceita
     await expect(liveIndicator).toBeVisible({ timeout: 10000 });
     
     console.log("SUCCESS: 'Live' badge is blinking on the screen and connected!");

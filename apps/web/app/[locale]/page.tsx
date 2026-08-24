@@ -9,34 +9,36 @@ import { CompareChartFeature } from '@/components/features/CompareChartFeature';
 import { VolumeProfileFeature } from '@/components/features/VolumeProfileFeature';
 import { RadarAnalysisFeature } from '@/components/features/RadarAnalysisFeature';
 import { DeepDiveStatsFeature } from '@/components/features/DeepDiveStatsFeature';
+import { useTranslations } from 'next-intl';
 
 export default function Page() {
+  const t = useTranslations('Tabs');
   const { data: topCoins } = useTopCoins();
 
   const chartTabs: Tab[] = [
     {
       id: 'tab-ohlc',
-      label: 'Price Action (OHLC)',
+      label: t('price_action'),
       content: topCoins ? <OhlcChartFeature coins={topCoins} /> : <div className="animate-pulse h-[400px] bg-slate-800 rounded-lg border border-slate-700"></div>,
     },
     {
       id: 'tab-compare',
-      label: 'Performance Compare',
+      label: t('performance'),
       content: topCoins ? <CompareChartFeature coins={topCoins} /> : <div className="animate-pulse h-[400px] bg-slate-800 rounded-lg border border-slate-700"></div>,
     },
     {
       id: 'tab-volume',
-      label: 'Volume Profile',
+      label: t('volume'),
       content: topCoins ? <VolumeProfileFeature coins={topCoins} /> : <div className="animate-pulse h-[400px] bg-slate-800 rounded-lg border border-slate-700"></div>,
     },
     {
       id: 'tab-radar',
-      label: 'Radar Analysis',
+      label: t('radar'),
       content: topCoins ? <RadarAnalysisFeature coins={topCoins} /> : <div className="animate-pulse h-[400px] bg-slate-800 rounded-lg border border-slate-700"></div>,
     },
     {
       id: 'tab-stats',
-      label: 'Deep Dive Stats',
+      label: t('deep_dive'),
       content: topCoins ? <DeepDiveStatsFeature coins={topCoins} /> : <div className="animate-pulse h-[400px] bg-slate-800 rounded-lg border border-slate-700"></div>,
     }
   ];

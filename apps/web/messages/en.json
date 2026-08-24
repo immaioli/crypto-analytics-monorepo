@@ -1,0 +1,22 @@
+{
+  "Header": {
+    "title": "Crypto Analytics",
+    "subtitle": "Professional Dashboard"
+  },
+  "Tabs": {
+    "price_action": "Price Action (OHLC)",
+    "performance": "Performance Compare",
+    "volume": "Volume Profile",
+    "radar": "Radar Analysis",
+    "deep_dive": "Deep Dive Stats"
+  },
+  "DeepDive": {
+    "title": "Fundamental Metrics & Quick Stats",
+    "aggregated_data": "Aggregated API Data",
+    "conversion": "Conversion (BRL)",
+    "volume_24h": "24h Volume",
+    "high_30d": "30-Day High",
+    "low_30d": "30-Day Low",
+    "na": "N/A"
+  }
+}
