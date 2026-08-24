@@ -40,7 +40,7 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
 
   // Format the live tick for Lightweight Charts Time
   const liveUpdate = liveData ? {
-    time: (Math.floor(liveData.time / 1000)) as any,
+    time: Math.floor(liveData.time / 1000) as import('lightweight-charts').Time,
     open: liveData.open,
     high: liveData.high,
     low: liveData.low,
