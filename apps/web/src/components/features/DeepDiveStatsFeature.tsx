@@ -4,12 +4,14 @@ import React from 'react';
 import { CoinSummary } from '@dashboard-cripto/shared-types';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { useCoinSummary } from '@/hooks/useCoinSummary';
+import { useTranslations } from 'next-intl';
 
 interface DeepDiveStatsFeatureProps {
   coins: CoinSummary[];
 }
 
 export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
+  const t = useTranslations('DeepDive');
   const { selectedAssetId } = useAssetSelection();
   const localCoinId = selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" || "" : '');
 
@@ -27,7 +29,7 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
   return (
     <div className="space-y-6">
       <div className="text-sm text-slate-400">
-        Fundamental Metrics & Quick Stats
+        {t('title')}
       </div>
 
       <div className="bg-[#0b1220] rounded-lg border border-slate-800 p-6 min-h-[350px]">
@@ -44,40 +46,48 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">Conversion (BRL)</h4>
-            <p className="text-lg font-semibold text-slate-200">
-              R$ {(selectedCoin.currentPrice * 5.4).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">Est. at 1 USD = 5.4 BRL</p>
+        <div className="flex flex-col gap-6">
+          {/* Default Info preserved as capsules too or alongside the new capsules */}
+          <div className="flex flex-wrap gap-3">
+            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
+              <span className="text-xs text-slate-500">{t('conversion')}</span>
+              <span className="text-sm text-slate-200 font-medium">R$ {(selectedCoin.currentPrice * 5.4).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 6 })}</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
+              <span className="text-xs text-slate-500">{t('volume_24h')}</span>
+              <span className="text-sm text-slate-200 font-medium">${(selectedCoin.totalVolume / 1e6).toFixed(2)}M</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
+              <span className="text-xs text-slate-500">{t('high_30d')}</span>
+              <span className="text-sm text-emerald-400 font-medium">{selectedCoin.ath !== undefined ? `$${selectedCoin.ath.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : t('na')}</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 rounded-full px-4 py-2 flex items-center gap-2">
+              <span className="text-xs text-slate-500">{t('low_30d')}</span>
+              <span className="text-sm text-rose-400 font-medium">{selectedCoin.atl !== undefined ? `$${selectedCoin.atl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : t('na')}</span>
+            </div>
           </div>
 
-          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">24h Trading Volume</h4>
-            <p className="text-lg font-semibold text-slate-200">${(selectedCoin.totalVolume / 1e6).toFixed(2)} Million</p>
-            <p className="text-xs text-slate-500 mt-1">Liquidity indicator</p>
-          </div>
+          {/* Aggregated Capsules from Backend */}
+          {selectedCoin.capsules && selectedCoin.capsules.length > 0 && (
+            <div className="pt-4 border-t border-slate-800/50">
+              <div className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">{t('aggregated_data')}</div>
+              <div className="flex flex-wrap gap-3">
+                {selectedCoin.capsules.map((capsule, idx) => {
+                  let providerColor = 'bg-slate-800 text-slate-400';
+                  if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/20';
+                  if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+                  if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/20';
 
-          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day High</h4>
-            <p className="text-lg font-semibold text-slate-200">
-              {selectedCoin.ath !== undefined ? `$${selectedCoin.ath.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
-            </p>
-            <p className="text-xs text-emerald-500/80 mt-1">
-              {selectedCoin.athDate ? new Date(selectedCoin.athDate).toLocaleDateString() : 'Monthly peak'}
-            </p>
-          </div>
-
-          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/80">
-            <h4 className="text-sm font-medium text-slate-400 mb-1">30-Day Low</h4>
-            <p className="text-lg font-semibold text-slate-200">
-              {selectedCoin.atl !== undefined ? `$${selectedCoin.atl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}` : 'N/A'}
-            </p>
-            <p className="text-xs text-rose-500/80 mt-1">
-              {selectedCoin.atlDate ? new Date(selectedCoin.atlDate).toLocaleDateString() : 'Monthly bottom'}
-            </p>
-          </div>
+                  return (
+                    <div key={idx} className={`border rounded-full px-3 py-1.5 flex items-center gap-2 ${providerColor}`}>
+                      <span className="text-xs opacity-75">{capsule.label}:</span>
+                      <span className="text-sm font-semibold">{capsule.value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
