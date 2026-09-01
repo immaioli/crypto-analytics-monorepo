@@ -62,7 +62,6 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
                     let providerColor = 'bg-slate-800 text-slate-400 border-slate-700';
                     if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/30';
                     if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-                    if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/30';
 
                     return (
                       <div key={idx} className={`border rounded-lg px-4 py-2 flex flex-col justify-center min-w-[140px] ${providerColor} hover:brightness-125 transition-all shadow-sm`}>
@@ -85,7 +84,6 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
                     let providerColor = 'bg-slate-800 text-slate-400 border-slate-700';
                     if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/30';
                     if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-                    if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/30';
 
                     return (
                       <div key={idx} className={`border rounded-lg px-4 py-2 flex flex-col justify-center min-w-[140px] ${providerColor} hover:brightness-125 transition-all shadow-sm`}>
@@ -108,7 +106,6 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
                     let providerColor = 'bg-slate-800 text-slate-400 border-slate-700';
                     if (capsule.provider === 'coingecko') providerColor = 'bg-green-500/10 text-green-400 border-green-500/30';
                     if (capsule.provider === 'binance') providerColor = 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30';
-                    if (capsule.provider === 'coinpaprika') providerColor = 'bg-orange-500/10 text-orange-400 border-orange-500/30';
 
                     return (
                       <div key={idx} className={`border rounded-lg px-4 py-2 flex flex-col justify-center min-w-[140px] ${providerColor} hover:brightness-125 transition-all shadow-sm`}>
@@ -143,3 +140,4 @@ export function DeepDiveStatsFeature({ coins }: DeepDiveStatsFeatureProps) {
     </div>
   );
 }
+
