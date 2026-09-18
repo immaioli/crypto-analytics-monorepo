@@ -100,6 +100,26 @@ Para verificar visualmente los componentes de la interfaz y la carga de datos:
 node test-playwright.mjs
 ```
 
+### Code Knowledge Graph
+
+El repositorio incluye un servicio local de recuperación del Code Knowledge Graph para proporcionar contexto de código relevante a un agente de IA. El flujo predeterminado en memoria está disponible en `http://localhost:3005/graph-context?query=...`.
+
+Para persistir el grafo localmente en Neo4j:
+
+```bash
+docker compose up -d neo4j
+npm run graph:db:push
+```
+
+Neo4j Browser estará disponible en `http://localhost:7474`. Las credenciales locales predeterminadas son `neo4j` y `dashboard-cripto`; define `NEO4J_PASSWORD` para cambiar la contraseña antes de iniciar el contenedor. El importador acepta `NEO4J_URI`, `NEO4J_USER` y `NEO4J_PASSWORD` para configuraciones personalizadas.
+
+El grafo también puede generarse y consultarse sin Neo4j:
+
+```bash
+npm run graph:test
+npm run graph:serve
+```
+
 ## ⚙️ Variables de Entorno
 
 Crea un archivo `.env` en los directorios `apps/api` y `apps/web`.

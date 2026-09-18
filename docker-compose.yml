@@ -41,6 +41,21 @@ services:
       - redis_data:/data
     command: redis-server --save 60 1 --loglevel warning
 
+  neo4j:
+    image: neo4j:5-community
+    container_name: crypto_neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-dashboard-cripto}
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 512m
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+
   nginx:
     image: nginx:alpine
     container_name: crypto_nginx
@@ -56,3 +71,5 @@ services:
 
 volumes:
   redis_data:
+  neo4j_data:
+  neo4j_logs:

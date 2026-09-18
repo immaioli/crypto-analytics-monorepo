@@ -16,7 +16,12 @@
     "build:types": "npm run build -w @dashboard-cripto/shared-types",
     "test": "npm run test -ws --if-present",
     "test:infra": "node scripts/validate-infra.mjs",
-    "lint": "npm run lint -ws --if-present"
+    "lint": "npm run lint -ws --if-present",
+    "graph:query": "node scripts/code-knowledge-graph-query.mjs",
+    "graph:serve": "node scripts/code-knowledge-graph-server.mjs",
+    "graph:test": "node scripts/code-knowledge-graph.test.mjs",
+    "graph:ai": "node scripts/code-knowledge-graph-ai.mjs",
+    "graph:db:push": "node scripts/code-knowledge-graph-neo4j.mjs"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -26,6 +31,7 @@
     "kill-port": "^2.0.1"
   },
   "dependencies": {
+    "neo4j-driver": "^5.28.3",
     "p-queue": "^9.3.3"
   }
 }
