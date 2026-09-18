@@ -1,9 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname } from '@/i18n-navigation';
-import { ThanosSnapTarget } from './effects/ChaosEngine';
+import { createNavigation } from 'next-intl/navigation';
+import { locales } from '@/i18n';
+
+const { useRouter, usePathname } = createNavigation({
+  locales,
+  localePrefix: 'always',
+});
 
 const LOCALES = [
   { code: 'pt-BR', flagUrl: 'https://flagcdn.com/w40/br.png', alt: 'Português' },
@@ -26,8 +30,7 @@ function LanguageFlag({ code, flagUrl, alt, isActive, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <ThanosSnapTarget>
-      <button
+    <button
         type="button"
         onClick={onClick}
         className={`relative flex items-center justify-center overflow-hidden transition-all duration-300 w-9 h-6 sm:w-10 sm:h-[26px] ${
@@ -45,8 +48,7 @@ function LanguageFlag({ code, flagUrl, alt, isActive, onClick }: {
           className="object-cover"
           unoptimized
         />
-      </button>
-    </ThanosSnapTarget>
+    </button>
   );
 }
 
