@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { Search } from 'lucide-react';
 import { useTopCoins } from '@/hooks/useTopCoins';
+import { useTranslations } from 'next-intl';
 
 export function AssetSearchInput() {
   const { setSelectedAssetId, addCustomCoin } = useAssetSelection();
@@ -11,6 +12,7 @@ export function AssetSearchInput() {
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [notFoundError, setNotFoundError] = useState<string | null>(null);
+  const t = useTranslations('Search');
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -49,10 +51,10 @@ export function AssetSearchInput() {
           setSelectedAssetId(resolvedId);
           setQuery('');
         } else {
-          setNotFoundError(`Coin "${query}" was not found.`);
+          setNotFoundError(t('not_found', { query }));
         }
       } catch (error) {
-        setNotFoundError(`Search failed for "${query}".`);
+        setNotFoundError(t('failed', { query }));
       } finally {
         setIsSearching(false);
       }
@@ -65,7 +67,7 @@ export function AssetSearchInput() {
         <div className="relative flex items-stretch w-64 sm:w-80 transition-all focus-within:ring-2 focus-within:ring-blue-500 rounded-lg shadow-sm">
           <input
             type="text"
-            placeholder="Search by exact symbol (e.g. BTC, ACH)..."
+            placeholder={t('placeholder')}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

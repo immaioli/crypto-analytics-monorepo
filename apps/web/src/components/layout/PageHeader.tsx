@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 export function PageHeader() {
   const t = useTranslations('Header');
@@ -8,7 +11,12 @@ export function PageHeader() {
   return (
     <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <a href="https://maioli.dev.br" target="_blank" rel="noopener noreferrer" className="block flex-shrink-0 transition-transform hover:scale-105">
+        <a
+          href="https://maioli.dev.br"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block flex-shrink-0 transition-transform hover:scale-105"
+        >
           <div className="w-[72px] h-[72px] relative bg-white rounded-xl p-1.5 shadow-sm">
             <Image
               src="/logoHeader.png"
@@ -25,11 +33,7 @@ export function PageHeader() {
         </div>
       </div>
 
-      {/* Locale Switcher placeholder */}
-      <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg p-1">
-         <a href="/pt" className="px-3 py-1 text-sm rounded-md hover:bg-slate-800 text-slate-300">PT</a>
-         <a href="/en" className="px-3 py-1 text-sm rounded-md hover:bg-slate-800 text-slate-300">EN</a>
-      </div>
+      <LanguageSwitcher />
     </header>
   );
 }

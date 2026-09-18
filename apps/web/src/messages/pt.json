@@ -1,0 +1,19 @@
+{
+  "Header": {
+    "title": "Crypto Analytics",
+    "subtitle": "Professional Dashboard"
+  },
+  "Tabs": {
+    "price_action": "Visão Geral do Mercado",
+    "performance": "Maior Volume",
+    "volume": "Top Gainers",
+    "radar": "Analytics Avançados",
+    "deep_dive": "Deep Dive Stats"
+  },
+  "Footer": {
+    "analytics": "Crypto Analytics",
+    "made_by": "Criado por",
+    "github": "Repositório no GitHub",
+    "maioli": "maioli.dev.br"
+  }
+}

@@ -7,6 +7,7 @@ import {
 import { CoinSummary } from '@dashboard-cripto/shared-types';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { SelectedAssetBadge } from '../ui/SelectedAssetBadge';
+import { useTranslations } from 'next-intl';
 
 interface RadarAnalysisFeatureProps {
   coins: CoinSummary[];
@@ -14,6 +15,8 @@ interface RadarAnalysisFeatureProps {
 
 export function RadarAnalysisFeature({ coins }: RadarAnalysisFeatureProps) {
   const { selectedAssetId } = useAssetSelection();
+  const tTabs = useTranslations('Tabs');
+  const tRadar = useTranslations('Radar');
   const localCoinId = selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" || "" : '');
 
   const selectedCoin = coins.find(c => c.id === localCoinId);
@@ -42,27 +45,27 @@ export function RadarAnalysisFeature({ coins }: RadarAnalysisFeatureProps) {
 
   const data = [
     {
-      subject: 'Value (Price Index)',
+      subject: tRadar('value'),
       A: ((selectedCoin?.currentPrice || 1) / maxPrice) * 100,
       fullMark: 100,
     },
     {
-      subject: 'Liquidity (Volume)',
+      subject: tRadar('liquidity'),
       A: (totalVolume / maxVolume) * 100,
       fullMark: 100,
     },
     {
-      subject: 'Momentum (Direction)',
+      subject: tRadar('momentum'),
       A: (priceChange > 0 ? 80 : 20), // Simplification for directional momentum
       fullMark: 100,
     },
     {
-      subject: 'Volatility (Risk)',
+      subject: tRadar('volatility'),
       A: (Math.abs(priceChange) / maxVolatility) * 100,
       fullMark: 100,
     },
     {
-      subject: 'Stability Profile',
+      subject: tRadar('stability'),
       // Less volatility = more stability
       A: 100 - ((Math.abs(priceChange) / maxVolatility) * 100),
       fullMark: 100,
@@ -74,7 +77,7 @@ export function RadarAnalysisFeature({ coins }: RadarAnalysisFeatureProps) {
       <div className="flex items-center gap-4">
         <SelectedAssetBadge fallbackId={coins.length > 0 ? coins[0]?.id || "" || "" : ""} />
         <div className="text-sm text-slate-400">
-          Fundamental Analysis vs Top Market Average
+          {tTabs('fundamental_vs_market')}
         </div>
       </div>
 

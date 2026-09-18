@@ -1,0 +1,74 @@
+{
+  "Header": {
+    "title": "Crypto Analytics",
+    "subtitle": "Professional Dashboard"
+  },
+  "Tabs": {
+    "price_action": "Price Action (OHLC)",
+    "market_overview": "Market Overview",
+    "advanced_analytics": "Advanced Analytics",
+    "live": "Live",
+    "highest_volume": "Highest Volume",
+    "top_gainers": "Top Gainers",
+    "performance": "Highest Volume",
+    "volume": "Top Gainers",
+    "radar": "Advanced Analytics",
+    "deep_dive": "Deep Dive Stats",
+    "highest_high": "Highest High (Max ▲)",
+    "lowest_high": "Lowest High (Max ▼)",
+    "center_average": "Center Average",
+    "highest_low": "Highest Low (Min ▲)",
+    "lowest_low": "Lowest Low (Min ▼)",
+    "current_price": "Current Price",
+    "analytics": "Crypto Analytics",
+    "showing_performance": "Showing performance index (Base‑0%) comparison.",
+    "max_five_coins": "Max 5 coins allowed for clarity.",
+    "buy_volume": "Buy Volume (Up)",
+    "sell_volume": "Sell Volume (Down)",
+    "price_trend": "Price Trend (MA)",
+    "fundamental_vs_market": "Fundamental Analysis vs Top Market Average",
+    "radar_chart": "Radar Chart",
+    "deep_dive_title": "Deep Dive Stats",
+    "real_time_trading": "Real‑Time Trading",
+    "fundamentals_supply": "Fundamentals & Supply",
+    "risk_volatility": "Risk & Volatility",
+    "data_sources": "Data Sources"
+  },
+  "DeepDive": {
+    "title": "Deep Dive Stats",
+    "real_time_trading": "Real‑Time Trading",
+    "fundamentals_supply": "Fundamentals & Supply",
+    "risk_volatility": "Risk & Volatility",
+    "data_sources": "Data Sources"
+  },
+  "Radar": {
+    "fundamental_vs_market": "Fundamental Analysis vs Top Market Average",
+    "value": "Value (Price Index)",
+    "liquidity": "Liquidity (Volume)",
+    "momentum": "Momentum (Direction)",
+    "volatility": "Volatility (Risk)",
+    "stability": "Stability Profile"
+  },
+  "Search": {
+    "placeholder": "Search by exact symbol (e.g. BTC, ACH)...",
+    "not_found": "Coin \"{query}\" was not found.",
+    "failed": "Search failed for \"{query}\"."
+  },
+  "ChartErrors": {
+    "loading": "Loading chart data...",
+    "failed": "Failed to load chart data.",
+    "ohlc_failed": "Failed to load chart data.",
+    "compare_failed": "Failed to load comparison data.",
+    "volume_failed": "Failed to load volume data.",
+    "radar_failed": "Failed to load radar data."
+  },
+  "AssetErrors": {
+    "load_failed": "Error loading asset"
+  },
+  "Footer": {
+    "analytics": "Crypto Analytics",
+    "made_by": "Made by",
+    "github": "GitHub Repository",
+    "maioli": "maioli.dev.br"
+  }
+}

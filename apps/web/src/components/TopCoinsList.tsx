@@ -2,6 +2,8 @@
 
 import React from "react";
 import { useTopCoins } from "@/hooks/useTopCoins";
+import { useTranslations } from 'next-intl';
+
 import { useAssetSelection } from "@/hooks/useAssetSelection";
 import { CoinCard } from "./ui/CoinCard";
 import { useCoinSummary } from "@/hooks/useCoinSummary";
@@ -33,6 +35,13 @@ function CustomCoinCard({
 }
 
 export function TopCoinsList() {
+  let t: (key: string) => string;
+  try {
+    t = useTranslations('Tabs');
+  } catch {
+    // Fallback for test environments without NextIntlClientProvider
+    t = (key) => key;
+  }
   const { data: coins, isLoading, isError, error } = useTopCoins();
   const { selectedAssetId, setSelectedAssetId, customCoins, removeCustomCoin } =
     useAssetSelection();
@@ -81,7 +90,7 @@ export function TopCoinsList() {
       {/* 1. Top Volume Row */}
       <div>
         <h3 className="text-md font-semibold text-slate-300 mb-3 border-b border-slate-800 pb-2">
-          Highest Volume
+          {t('highest_volume')}
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-3">
           {volumeLeaders.map((coin) => {
@@ -104,7 +113,7 @@ export function TopCoinsList() {
       {topGainers.length > 0 && (
         <div>
           <h3 className="text-md font-semibold text-slate-300 mb-3 border-b border-slate-800 pb-2">
-            Top Gainers
+            {t('top_gainers')}
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-3">
             {topGainers.map((coin) => {

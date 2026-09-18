@@ -9,6 +9,7 @@ import { PeriodSelector } from '../ui/PeriodSelector';
 import { ChartErrorView } from '../ui/ChartStates';
 import { useVolumeChartFormatter } from '@/hooks/useVolumeChartFormatter';
 import { SelectedAssetBadge } from '../ui/SelectedAssetBadge';
+import { useTranslations } from 'next-intl';
 
 interface VolumeProfileFeatureProps {
   coins: CoinSummary[];
@@ -23,6 +24,7 @@ const fetcher = async (url: string) => {
 export function VolumeProfileFeature({ coins }: VolumeProfileFeatureProps) {
   const { selectedAssetId } = useAssetSelection();
   const [days, setDays] = useState<SupportedPeriod>('1');
+  const t = useTranslations('Tabs');
 
   const localCoinId = selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" : '');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -55,7 +57,7 @@ export function VolumeProfileFeature({ coins }: VolumeProfileFeatureProps) {
       </div>
 
       <div className="bg-[#0b1220] rounded-lg border border-slate-800 p-4 min-h-[400px] flex flex-col justify-center relative">
-        {isError && (!multiLineData || multiLineData.length === 0) && <ChartErrorView message="Failed to load volume data." />}
+        {isError && (!multiLineData || multiLineData.length === 0) && <ChartErrorView messageKey="volume_failed" />}
 
         {(!isError || multiLineData) && multiLineData && multiLineData.length > 0 && (
           <>
@@ -65,9 +67,9 @@ export function VolumeProfileFeature({ coins }: VolumeProfileFeatureProps) {
               height={350}
             />
             <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium px-2 justify-center border-t border-slate-800/50 pt-4">
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-500"></span><span className="text-slate-400">Buy Volume (Up)</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-rose-500"></span><span className="text-slate-400">Sell Volume (Down)</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-blue-500"></span><span className="text-slate-400">Price Trend (MA)</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-500"></span><span className="text-slate-400">{t('buy_volume')}</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-rose-500"></span><span className="text-slate-400">{t('sell_volume')}</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-blue-500"></span><span className="text-slate-400">{t('price_trend')}</span></div>
             </div>
           </>
         )}

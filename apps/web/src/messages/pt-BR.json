@@ -1,0 +1,74 @@
+{
+  "Header": {
+    "title": "Análise de Criptomoedas",
+    "subtitle": "Dashboard Profissional"
+  },
+  "Tabs": {
+    "price_action": "Visão Geral do Mercado",
+    "market_overview": "Visão Geral do Mercado",
+    "advanced_analytics": "Análise Avançada",
+    "live": "Ao Vivo",
+    "highest_volume": "Maior Volume",
+    "top_gainers": "Maiores Ganhadores",
+    "performance": "Maior Volume",
+    "volume": "Maiores Ganhadores",
+    "radar": "Análise Avançada",
+    "deep_dive": "Estatísticas Detalhadas",
+    "highest_high": "Máximo Alto (Max ▲)",
+    "lowest_high": "Mínimo Alto (Max ▼)",
+    "center_average": "Média Central",
+    "highest_low": "Máximo Baixo (Min ▲)",
+    "lowest_low": "Mínimo Baixo (Min ▼)",
+    "current_price": "Preço Atual",
+    "analytics": "Analytics de Criptomoedas",
+    "showing_performance": "Mostrando índice de desempenho (Base‑0%) comparado.",
+    "max_five_coins": "Máximo 5 moedas permitidas para clareza.",
+    "buy_volume": "Volume de Compra (Alta)",
+    "sell_volume": "Volume de Venda (Baixa)",
+    "price_trend": "Tendência de Preço (MM)",
+    "fundamental_vs_market": "Análise Fundamental vs Média do Mercado",
+    "radar_chart": "Gráfico de Radar",
+    "deep_dive_title": "Estatísticas Detalhadas",
+    "real_time_trading": "Negociação em Tempo Real",
+    "fundamentals_supply": "Fundamentos & Oferta",
+    "risk_volatility": "Risco & Volatilidade",
+    "data_sources": "Fontes de Dados"
+  },
+  "DeepDive": {
+    "title": "Estatísticas Detalhadas",
+    "real_time_trading": "Negociação em Tempo Real",
+    "fundamentals_supply": "Fundamentos & Oferta",
+    "risk_volatility": "Risco & Volatilidade",
+    "data_sources": "Fontes de Dados"
+  },
+  "Radar": {
+    "fundamental_vs_market": "Análise Fundamental vs Média do Mercado",
+    "value": "Valor (Índice de Preço)",
+    "liquidity": "Liquidez (Volume)",
+    "momentum": "Momento (Direção)",
+    "volatility": "Volatilidade (Risco)",
+    "stability": "Perfil de Estabilidade"
+  },
+  "Search": {
+    "placeholder": "Buscar por símbolo exato (ex. BTC, ACH)...",
+    "not_found": "Moeda \"{query}\" não foi encontrada.",
+    "failed": "Falha na busca por \"{query}\"."
+  },
+  "ChartErrors": {
+    "loading": "Carregando dados do gráfico...",
+    "failed": "Falha ao carregar dados do gráfico.",
+    "ohlc_failed": "Falha ao carregar dados do gráfico.",
+    "compare_failed": "Falha ao carregar dados de comparação.",
+    "volume_failed": "Falha ao carregar dados de volume.",
+    "radar_failed": "Falha ao carregar dados do radar."
+  },
+  "AssetErrors": {
+    "load_failed": "Erro ao carregar ativo"
+  },
+  "Footer": {
+    "analytics": "Analytics de Criptomoedas",
+    "made_by": "Criado por",
+    "github": "Repositório no GitHub",
+    "maioli": "maioli.dev.br"
+  }
+}

@@ -9,6 +9,7 @@ import { PeriodSelector } from '../ui/PeriodSelector';
 import { ChartLoadingView, ChartErrorView } from '../ui/ChartStates';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { SelectedAssetBadge } from '../ui/SelectedAssetBadge';
+import { useTranslations } from 'next-intl';
 
 interface CompareChartFeatureProps {
   coins: CoinSummary[];
@@ -18,6 +19,7 @@ interface CompareChartFeatureProps {
 const COLORS = ['#3b82f6', '#10b981', '#f43f5e', '#eab308', '#8b5cf6'];
 
 export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
+  const t = useTranslations('Tabs');
   // Default to comparing the top 2 coins (usually BTC and ETH)
   const [selectedIds, setSelectedIds] = useState<string[]>(
     coins.slice(0, 2).map(coinData => coinData.id)
@@ -165,13 +167,13 @@ export function CompareChartFeature({ coins }: CompareChartFeatureProps) {
       </div>
 
       <div className="bg-[#0b1220] rounded-lg border border-slate-800 p-4 min-h-[400px] flex flex-col justify-center relative">
-        {isError && !multiLineData && <ChartErrorView message="Failed to load comparison data." />}
+        {isError && !multiLineData && <ChartErrorView messageKey="compare_failed" />}
 
         {(!isError || multiLineData) && multiLineData && multiLineData.length > 0 && (
           <>
             <div className="flex flex-col sm:flex-row justify-between mb-2 text-sm text-slate-400">
-              <span>Showing performance index (Base-0%) comparison.</span>
-              <span className="italic">Max 5 coins allowed for clarity.</span>
+              <span>{t('showing_performance')}</span>
+              <span className="italic">{t('max_five_coins')}</span>
             </div>
             <LightweightChartWrapper
               type="multi-line"

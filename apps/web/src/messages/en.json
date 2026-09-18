@@ -1,0 +1,44 @@
+{
+  "Header": {
+    "title": "Crypto Analytics",
+    "subtitle": "Professional Dashboard"
+  },
+  "Tabs": {
+    "price_action": "Market Overview",
+    "performance": "Highest Volume",
+    "volume": "Top Gainers",
+    "radar": "Advanced Analytics",
+    "deep_dive": "Deep Dive Stats",
+    "market_overview": "Market Overview",
+    "advanced_analytics": "Advanced Analytics",
+    "live": "Live",
+    "highest_volume": "Highest Volume",
+    "top_gainers": "Top Gainers",
+    "highest_high": "Highest High (Max ▲)",
+    "lowest_high": "Lowest High (Max ▼)",
+    "center_average": "Center Average",
+    "highest_low": "Highest Low (Min ▲)",
+    "lowest_low": "Lowest Low (Min ▼)",
+    "current_price": "Current Price",
+    "analytics": "Crypto Analytics",
+    "showing_performance": "Showing performance index (Base‑0%) comparison.",
+    "max_five_coins": "Max 5 coins allowed for clarity.",
+    "buy_volume": "Buy Volume (Up)",
+    "sell_volume": "Sell Volume (Down)",
+    "price_trend": "Price Trend (MA)",
+    "fundamental_vs_market": "Fundamental Analysis vs Top Market Average",
+    "radar_chart": "Radar Chart",
+    "deep_dive_title": "Deep Dive Stats",
+    "real_time_trading": "Real‑Time Trading",
+    "fundamentals_supply": "Fundamentals & Supply",
+    "risk_volatility": "Risk & Volatility",
+    "data_sources": "Data Sources"
+  },
+  "Footer": {
+    "analytics": "Crypto Analytics",
+    "made_by": "Made by",
+    "github": "GitHub Repository",
+    "maioli": "maioli.dev.br"
+  }
+}
+

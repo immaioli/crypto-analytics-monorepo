@@ -56,6 +56,7 @@ export interface LightweightChartWrapperProps {
 
 export function LightweightChartWrapper({ type, data, multiLineData, liveUpdate, priceLines, seriesConfig, colors, height = 400 }: LightweightChartWrapperProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const lastTimeRef = useRef<Time | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
 
@@ -161,9 +162,16 @@ export function LightweightChartWrapper({ type, data, multiLineData, liveUpdate,
 
     if (type !== 'multi-line' && series) {
       seriesRef.current = series;
-      // 3. Set Data
+      // 3. Set Data (ensure ascending order by time)
       if (data) {
-        series.setData(data as any);
+        const sortedData = Array.isArray(data)
+          ? [...data].sort((a, b) => {
+              const ta = a.time as any;
+              const tb = b.time as any;
+              return Number(ta) - Number(tb);
+            })
+          : data;
+        series.setData(sortedData as any);
       }
     }
 
@@ -246,7 +254,29 @@ export function LightweightChartWrapper({ type, data, multiLineData, liveUpdate,
   // 6. Handle Live Updates efficiently without re-rendering the whole chart
   useEffect(() => {
     if (liveUpdate && seriesRef.current) {
-      seriesRef.current.update(liveUpdate as any);
+      // Accept either a single point or an array of points.
+      if (Array.isArray(liveUpdate)) {
+        // Replace whole dataset if an array is provided – useful for full refreshes.
+        seriesRef.current.setData(liveUpdate as any);
+        // Update the cached last time to the newest point in the array.
+        const last = liveUpdate[liveUpdate.length - 1];
+        if (last && last.time) {
+          lastTimeRef.current = last.time as any;
+        }
+        return;
+      }
+
+      const newPoint: any = liveUpdate;
+      const newTime = newPoint.time as any;
+
+      // Guard against out‑of‑order updates which cause the "Cannot update oldest data" error.
+      if (lastTimeRef.current && newTime <= lastTimeRef.current) {
+        // Discard stale update.
+        return;
+      }
+
+      seriesRef.current.update(newPoint);
+      lastTimeRef.current = newTime as any;
     }
   }, [liveUpdate]);
 

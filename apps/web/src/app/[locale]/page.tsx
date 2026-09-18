@@ -46,12 +46,12 @@ export default function Page() {
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-xl font-semibold text-white mb-4">Market Overview</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">{t('market_overview')}</h2>
         <TopCoinsList />
       </section>
 
       <section className="bg-slate-900/30 p-3 sm:p-6 rounded-2xl border border-slate-800/50 shadow-xl shadow-black/20">
-        <h2 className="text-xl font-semibold text-white mb-6">Advanced Analytics</h2>
+        <h2 className="text-xl font-semibold text-white mb-6">{t('advanced_analytics')}</h2>
         <Tabs tabs={chartTabs} />
       </section>
     </div>

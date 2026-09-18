@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAssetSelection } from '@/hooks/useAssetSelection';
 import { useCoinSummary } from '@/hooks/useCoinSummary';
+import { useTranslations } from 'next-intl';
 
 interface SelectedAssetBadgeProps {
   fallbackId?: string; // ID to use if no asset is selected globally
@@ -11,6 +12,7 @@ interface SelectedAssetBadgeProps {
 export function SelectedAssetBadge({ fallbackId }: SelectedAssetBadgeProps) {
   const { selectedAssetId } = useAssetSelection();
   const activeId = selectedAssetId || fallbackId;
+  const t = useTranslations('AssetErrors');
 
   const { data: coin, isLoading, isError } = useCoinSummary(activeId || null);
 
@@ -28,7 +30,7 @@ export function SelectedAssetBadge({ fallbackId }: SelectedAssetBadgeProps) {
   if (isError || !coin) {
     return (
       <div className="flex items-center gap-2 bg-[#0b1220] border border-red-900/50 rounded-lg px-3 py-1.5">
-        <span className="text-sm text-red-400">Error loading asset</span>
+        <span className="text-sm text-red-400">{t('load_failed')}</span>
       </div>
     );
   }

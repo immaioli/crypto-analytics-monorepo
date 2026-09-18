@@ -11,6 +11,7 @@ import { PeriodSelector } from '../ui/PeriodSelector';
 import { ChartLoadingView, ChartErrorView } from '../ui/ChartStates';
 import { SelectedAssetBadge } from '../ui/SelectedAssetBadge';
 import { useCoinSummary } from '@/hooks/useCoinSummary';
+import { useTranslations } from 'next-intl';
 
 interface OhlcChartFeatureProps {
   coins: CoinSummary[];
@@ -18,6 +19,7 @@ interface OhlcChartFeatureProps {
 
 export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
   const { selectedAssetId } = useAssetSelection();
+  const t = useTranslations('Tabs');
 
   const [localCoinId, setLocalCoinId] = useState<string>(
     selectedAssetId || (coins.length > 0 ? coins[0]?.id || "" : '')
@@ -61,7 +63,7 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-xs text-emerald-400 font-medium">Live</span>
+              <span className="text-xs text-emerald-400 font-medium">{t('live')}</span>
             </div>
           )}
         </div>
@@ -76,7 +78,7 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
       </div>
 
       <div className="bg-[#0b1220] rounded-lg border border-slate-800 p-4 min-h-[400px] flex flex-col justify-center relative">
-        {isError && !chartData && <ChartErrorView message="Failed to load chart data." />}
+        {isError && !chartData && <ChartErrorView messageKey="ohlc_failed" />}
 
         {(!isError || chartData) && chartData && (
           <>
@@ -94,12 +96,12 @@ export function OhlcChartFeature({ coins }: OhlcChartFeatureProps) {
               height={350}
             />
             <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium px-2 justify-center border-t border-slate-800/50 pt-4">
-              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dotted border-emerald-500"></span><span className="text-slate-400">Highest High (Max ▲)</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dashed border-emerald-400"></span><span className="text-slate-400">Lowest High (Max ▼)</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dashed border-blue-500"></span><span className="text-slate-400">Center Average</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dashed border-rose-400"></span><span className="text-slate-400">Highest Low (Min ▲)</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dotted border-rose-500"></span><span className="text-slate-400">Lowest Low (Min ▼)</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dotted border-orange-500"></span><span className="text-slate-400">Current Price</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dotted border-emerald-500"></span><span className="text-slate-400">{t('highest_high')}</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dashed border-emerald-400"></span><span className="text-slate-400">{t('lowest_high')}</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dashed border-blue-500"></span><span className="text-slate-400">{t('center_average')}</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dashed border-rose-400"></span><span className="text-slate-400">{t('highest_low')}</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dotted border-rose-500"></span><span className="text-slate-400">{t('lowest_low')}</span></div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-0.5 border-b-2 border-dotted border-orange-500"></span><span className="text-slate-400">{t('current_price')}</span></div>
             </div>
           </>
         )}
