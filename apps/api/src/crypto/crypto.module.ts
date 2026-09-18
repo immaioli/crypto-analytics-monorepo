@@ -5,8 +5,10 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { CryptoController } from './crypto.controller.js';
 import { CryptoService } from './crypto.service.js';
 import { BinanceClientService } from './services/binance-client.service.js';
-import { CoinPaprikaClientService } from './services/coinpaprika-client.service.js';
 import { CoinGeckoClientService } from './services/coingecko-client.service.js';
+import { BybitClientService } from './services/bybit-client.service.js';
+import { OkxClientService } from './services/okx-client.service.js';
+import { CoinLoreClientService } from './services/coinlore-client.service.js';
 import { CryptoDictionaryService } from './services/crypto-dictionary.service.js';
 import { CryptoMathService } from './services/crypto-math.service.js';
 import { BinanceGateway } from './gateways/binance.gateway.js';
@@ -63,8 +65,10 @@ const logger = new Logger('CacheConfig');
   providers: [
     CryptoService,
     BinanceClientService,
-    CoinPaprikaClientService,
     CoinGeckoClientService,
+    BybitClientService,
+    OkxClientService,
+    CoinLoreClientService,
     CryptoDictionaryService,
     CryptoMathService,
     BinanceGateway,

@@ -116,7 +116,8 @@ export class BinanceClientService implements ICryptoProvider {
     if (!resolvedName || resolvedName === id) resolvedName = staticCoinData?.name || id;
     if (!resolvedImage) resolvedImage = staticCoinData?.image; // ui-avatars fallback
 
-    const tradingPair = this.dictionary.getBinancePair(id);
+    // Use the resolved symbol (e.g. ETH) not the raw slug (e.g. "ethereum") to build the Binance pair
+    const tradingPair = this.dictionary.getBinancePair(resolvedSymbol);
     if (!tradingPair) throw new Error(`Binance pairing not found for ${id}`);
 
     const { data: tickerData } = await firstValueFrom(this.httpService.get(`${this.baseUrl}/ticker/24hr?symbol=${tradingPair}`));
@@ -131,7 +132,17 @@ export class BinanceClientService implements ICryptoProvider {
       total_volume: parseFloat(tickerData.quoteVolume),
       price_change_percentage_24h: parseFloat(tickerData.priceChangePercent),
       market_cap: 0,
-      market_cap_rank: marketRank
+      market_cap_rank: marketRank,
+      // Raw ticker fields consumed by CryptoService to build Deep Dive capsules
+      lastPrice: tickerData.lastPrice,
+      priceChange: tickerData.priceChange,
+      priceChangePercent: tickerData.priceChangePercent,
+      highPrice: tickerData.highPrice,
+      lowPrice: tickerData.lowPrice,
+      bidPrice: tickerData.bidPrice,
+      askPrice: tickerData.askPrice,
+      volume: tickerData.volume,
+      quoteVolume: tickerData.quoteVolume
     };
   }
 

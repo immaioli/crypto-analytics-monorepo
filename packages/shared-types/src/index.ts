@@ -3,7 +3,7 @@ export type SupportedPeriod = "1" | "7" | "30";
 export interface ProviderCapsule {
   label: string;
   value: string;
-  provider: 'coingecko' | 'binance' | 'coinpaprika' | 'system';
+  provider: 'coingecko' | 'binance' | 'bybit' | 'okx' | 'coinlore' | 'system';
   category?: 'realTime' | 'metadata' | 'riskAndValidation';
 }
 

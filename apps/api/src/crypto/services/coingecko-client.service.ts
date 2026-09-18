@@ -85,6 +85,7 @@ export class CoinGeckoClientService implements ICryptoProvider {
           vs_currency: 'usd',
           ids: cleanId,
           sparkline: false,
+          price_change_percentage: '1h,7d,14d,30d',
         },
       })
     );
